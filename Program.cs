@@ -14,7 +14,7 @@ class MainClass
 
 
     //REAL NET
-    public static string version = "0.0.0.7";
+    public static string version = "0.0.0.8";
     public static string location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\";
     public static string bitmexKey = "";
     public static string bitmexSecret = "";
@@ -25,6 +25,7 @@ class MainClass
     public static string statusLong = "";
     public static string pair = "";
     public static int qtdyContacts = 0;
+    public static int qtdyContactsPosition = 0; // by Lucas Sousa ;)
     public static int interval = 0;
     public static int intervalOrder = 0;
     public static int intervalCapture = 0;
@@ -44,6 +45,11 @@ class MainClass
     public static double[] arrayPriceVolume = new double[100];
     public static double[] arrayPriceOpen = new double[100];
 
+    public static double[] arraypositionPrice = new double[100];
+    public static double[] arrayLiquidationPrice = new double[100];
+    public static double[] arraycontrats = new double[100];
+
+
     public static Object data = new Object();
 
     public static void Main(string[] args)
@@ -51,8 +57,10 @@ class MainClass
         try
         {
             //Config
+            Console.ForegroundColor = ConsoleColor.Green;
+
             log("Deleron - Back to the future - v" + version + " - Bitmex version");
-            log("by Matheus Grijo");
+            log("by Matheus Grijo Thanks Lucas Sousa ;) ");
             log("http://botmex.ninja/");
             log("GITHUB http://github.com/matheusgrijo");
             log(" ******* DONATE ********* ");
@@ -62,6 +70,9 @@ class MainClass
             log("ETC 0x088E7E67af94293DB55D61c7B55E2B098d2258D9");
             log("LTC MVT8fxU4WBzdfH5XgvRPWkp7pE4UyzG9G5");
             log("Load config...");
+            log("Considere DOAR para o projeto!");
+            log("Vamos aguardar 1 min para voce doar ;) ... ");
+            System.Threading.Thread.Sleep(60000);
 
             String jsonConfig = System.IO.File.ReadAllText(location + "key.txt");
             JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(jsonConfig, (typeof(JContainer)));
@@ -166,6 +177,10 @@ class MainClass
                 if (getCandles())
                 {
 
+                    log("");
+                    log("==========================================================");
+                    log(" ==================== Verify LONG OPERATION =============");
+                    log("==========================================================");
                     /////VERIFY OPERATION LONG
                     string operation = "buy";
                     //VERIFY INDICATORS ENTRY
@@ -280,8 +295,10 @@ class MainClass
 
 
                     //////////////////////////////////////////////////////////////
-
-
+                    log("");
+                    log("==========================================================");
+                    log(" ==================== Verify SHORT OPERATION =============");
+                    log("==========================================================");
                     /////VERIFY OPERATION LONG
                     operation = "sell";
                     //VERIFY INDICATORS ENTRY
@@ -408,37 +425,41 @@ class MainClass
     }
 
 
+
     static void makeOrder(string side)
     {
         try
-        {
+        {            
             log("Make order " + side);
+            int position = getPosition();
             if (side == "Sell" && statusShort == "enable")
             {
-                String json = bitMEXApi.MarketOrder(pair, "Sell", qtdyContacts);
+                if (position > 0)                                    
+                    position = (position*2) * (-1);                
+                else
+                    position = 0;
+                position += qtdyContacts*(-1);
+                String json = bitMEXApi.MarketOrder(pair, "Sell", position);                
                 log(json);
-                JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
-                double price = double.Parse(jCointaner["price"].ToString().Replace(".", "."));
-                price -= (price * (fee + profit)) / 100;
-                price = Math.Floor(price);
-                json = bitMEXApi.PostOrderPostOnly(pair, "Buy", price, qtdyContacts);
-                log(json);
+                log("wait 2s...");
+                System.Threading.Thread.Sleep(2000);               
             }
             if (side == "Buy" && statusLong == "enable")
             {
-                String json = bitMEXApi.MarketOrder(pair, "Buy", qtdyContacts);
-                log(json);
-                JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
-                double price = double.Parse(jCointaner["price"].ToString().Replace(".", "."));
-                price += (price * (fee + profit)) / 100;
-                price = Math.Ceiling(price);
-                json = bitMEXApi.PostOrderPostOnly(pair, "Sell", price, qtdyContacts);
-                log(json);
+                if (position < 0)
+                    position = (position * 2) * (-1);
+                else
+                    position = 0;
+                position += qtdyContacts ;
+                String json = bitMEXApi.MarketOrder(pair, "Buy", qtdyContacts + position);
+                log(json);                
+                log("wait 2s...");
+                System.Threading.Thread.Sleep(2000);                
             }
         }
         catch (Exception ex)
         {
-            log("ERRO MAKEORDER " + ex.Message + ex.StackTrace);
+            log("makeOrder()::" + ex.Message + ex.StackTrace);
         }
 
         log("wait " + intervalOrder + "ms");
@@ -485,6 +506,64 @@ class MainClass
         }
 
     }
+
+    //By Lucas Sousa modify MatheusGrijo
+    static int getPosition()
+    {
+        try
+        {
+            List<BitMEX.Position> OpenPositions = bitMEXApi.GetOpenPositions(pair);
+            int _qtdContacts = 0;
+            foreach (var Position in OpenPositions)                         
+                _qtdContacts += (int)Position.CurrentQty;                            
+            return _qtdContacts;
+        }
+        catch (Exception ex)
+        {
+            log("getPosition::" + ex.Message + ex.StackTrace);
+            return 0;
+        }
+    }
+
+    ////Meu (Pegar Ordens Abertas)
+    //static bool getOrder()
+    //{
+    //    try
+    //    {
+    //        var getorder = bitMEXApi.GetOrders(pair);
+    //        string[] words = getorder.Split(' ');
+    //        int i = 0;
+
+    //        var array = getorder.Split(new string[] { "},{" }, // lista de separadores complexos
+    //            StringSplitOptions.RemoveEmptyEntries);
+
+    //        log("WORDS :" + array[0]);
+    //        foreach (var Position in words)
+    //        {
+    //            // arraypositions[i] = (double)Position.Price;
+    //            // arrayLiquidationPrice[i] = (double)Position.Price;
+    //            log("ORDERS DENTRO :" + Position);
+
+
+    //            i++;
+
+    //        }
+
+    //        log("Position FORA:" + arraypositionPrice[0].ToString());
+    //        log("LiquidationPrice FORA:" + arrayLiquidationPrice[0].ToString());
+    //        return true;
+
+
+
+
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        log("GETORDER::" + ex.Message + ex.StackTrace);
+    //        return false;
+    //    }
+    //}
+
 
     static string getValue(String nameList, String nameIndicator, String nameParameter)
     {
