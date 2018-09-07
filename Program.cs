@@ -451,7 +451,7 @@ class MainClass
                 else
                     position = 0;
                 position += qtdyContacts ;
-                String json = bitMEXApi.MarketOrder(pair, "Buy", qtdyContacts + position);
+                String json = bitMEXApi.MarketOrder(pair, "Buy",  position);
                 log(json);                
                 log("wait 2s...");
                 System.Threading.Thread.Sleep(2000);                
