@@ -56,7 +56,7 @@ class MainClass
             Console.ForegroundColor = ConsoleColor.Green;
 
             log("Deleron - Back to the future - v" + version + " - Bitmex version");
-            log("by Matheus Grijo Thanks Lucas Sousa ;) ");
+            log("by Matheus Grijo Thanks Lucas Sousa and Luis Felipe Alves ;) ");
             log("http://botmex.ninja/");
             log("GITHUB http://github.com/matheusgrijo");
             log(" ******* DONATE ********* ");
