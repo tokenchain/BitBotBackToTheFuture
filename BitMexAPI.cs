@@ -170,7 +170,7 @@ namespace BitMEX
         {
             var param = new Dictionary<string, string>();
             param["symbol"] = Symbol;
-            //param["filter"] = "{\"open\":true}";
+            param["filter"] = "{\"open\":true}";
             //param["columns"] = "";
             //param["count"] = 100.ToString();
             //param["start"] = 0.ToString();
@@ -190,10 +190,10 @@ namespace BitMEX
             return Query("POST", "/order", param, true);
         }
 
-        public string DeleteOrders()
+        public string DeleteOrders(String id)
         {
             var param = new Dictionary<string, string>();
-            param["orderID"] = "de709f12-2f24-9a36-b047-ab0ff090f0bb";
+            param["orderID"] = id;
             param["text"] = "cancel order by ID";
             return Query("DELETE", "/order", param, true, true);
         }
@@ -216,9 +216,9 @@ namespace BitMEX
             param["side"] = Side;
             param["orderQty"] = Quantity.ToString();
             param["ordType"] = "Limit";
-            param["execInst"] = "ParticipateDoNotInitiate";
-            param["displayQty"] = 1.ToString(); // Shows the order as hidden, keeps us from moving price away from our own orders
-            param["price"] = Price.ToString();
+            //param["execInst"] = "ReduceOnly";
+            //param["displayQty"] = 1.ToString(); // Shows the order as hidden, keeps us from moving price away from our own orders
+            param["price"] = Price.ToString().Replace(",",".");
             return Query("POST", "/order", param, true);
         }
 
@@ -296,6 +296,7 @@ namespace BitMEX
             param["currency"] = "XBt";
             return Query("GET", "/user/walletHistory", param, true);
         }
+        
 
 
         #endregion

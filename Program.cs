@@ -14,7 +14,7 @@ class MainClass
 
 
     //REAL NET
-    public static string version = "0.0.0.8";
+    public static string version = "0.0.0.9";
     public static string location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\";
     public static string bitmexKey = "";
     public static string bitmexSecret = "";
@@ -45,10 +45,6 @@ class MainClass
     public static double[] arrayPriceVolume = new double[100];
     public static double[] arrayPriceOpen = new double[100];
 
-    public static double[] arraypositionPrice = new double[100];
-    public static double[] arrayLiquidationPrice = new double[100];
-    public static double[] arraycontrats = new double[100];
-
 
     public static Object data = new Object();
 
@@ -72,7 +68,7 @@ class MainClass
             log("Load config...");
             log("Considere DOAR para o projeto!");
             log("Vamos aguardar 1 min para voce doar ;) ... ");
-            System.Threading.Thread.Sleep(60000);
+            //System.Threading.Thread.Sleep(60000);
 
             String jsonConfig = System.IO.File.ReadAllText(location + "key.txt");
             JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(jsonConfig, (typeof(JContainer)));
@@ -92,8 +88,13 @@ class MainClass
             intervalCapture = int.Parse(jCointaner["webserverIntervalCapture"].ToString());
             profit = double.Parse(jCointaner["profit"].ToString());
             fee = double.Parse(jCointaner["fee"].ToString());
+            bitMEXApi = new BitMEX.BitMEXApi(bitmexKey, bitmexSecret, bitmexDomain);
 
 
+            //TESTS HERE
+            //makeOrder("Buy");
+
+            //FINAL
 
             if (jCointaner["webserver"].ToString() == "enable")
             {
@@ -103,8 +104,7 @@ class MainClass
                 tCapture.Start();
                 System.Threading.Thread.Sleep(1000);                
             }
-
-            bitMEXApi = new BitMEX.BitMEXApi(bitmexKey, bitmexSecret, bitmexDomain);
+            
 
             log("wait 1s...");
             System.Threading.Thread.Sleep(1000);
@@ -425,36 +425,80 @@ class MainClass
     }
 
 
+    static bool existsOrderOpen(string side)
+    {
+        List<BitMEX.Order> lst = bitMEXApi.GetOpenOrders(pair);
+        foreach (var item in lst)
+        {
+            if (item.Side.ToUpper() == side.ToUpper())
+                return true;
+        }
+        return false;
+    }
+
 
     static void makeOrder(string side)
     {
         try
         {            
             log("Make order " + side);
-            int position = getPosition();
+            
             if (side == "Sell" && statusShort == "enable")
             {
-                if (position > 0)                                    
-                    position = (position*2) * (-1);                
-                else
-                    position = 0;
-                position += qtdyContacts*(-1);
-                String json = bitMEXApi.MarketOrder(pair, "Sell", position);                
+                bool execute = false;
+                double price = Math.Abs(getPriceActual(side) + 1);
+                String json = bitMEXApi.PostOrderPostOnly(pair, side, price, qtdyContacts);
+                JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
                 log(json);
-                log("wait 2s...");
-                System.Threading.Thread.Sleep(2000);               
+                log("wait 30s total...");
+                for (int i = 0; i < 30; i++)
+                {
+                    if (!existsOrderOpen(side))
+                    {
+                        price -= (price * profit) / 100;
+                        price = Math.Abs(Math.Floor(price));
+                        json = bitMEXApi.PostOrderPostOnly(pair, "Buy", price, qtdyContacts);
+                        log(json);
+                        execute = true;
+                        break;
+                    }
+                    log("wait 1s...");
+                    Thread.Sleep(1000);
+                }
+
+
+                if (!execute)
+                    bitMEXApi.DeleteOrders(jCointaner["orderID"].ToString());
+
             }
             if (side == "Buy" && statusLong == "enable")
             {
-                if (position < 0)
-                    position = (position * 2) * (-1);
-                else
-                    position = 0;
-                position += qtdyContacts ;
-                String json = bitMEXApi.MarketOrder(pair, "Buy",  position);
-                log(json);                
-                log("wait 2s...");
-                System.Threading.Thread.Sleep(2000);                
+                bool execute = false;
+                double price = Math.Abs(getPriceActual(side) - 1);
+                String json = bitMEXApi.PostOrderPostOnly(pair, side, price , qtdyContacts);
+                JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
+                log(json);
+                log("wait 30s total...");
+                for (int i = 0; i < 30; i++)
+                {
+                    if (!existsOrderOpen(side))
+                    {                        
+                        price += (price * profit) / 100;
+                        price = Math.Abs( Math.Floor(price));
+                        json = bitMEXApi.PostOrderPostOnly(pair, "Sell", price, qtdyContacts);
+                        log(json);
+                        execute = true;
+                        break;
+                    }
+                    log("wait 1s...");
+                    Thread.Sleep(1000);
+                }
+
+
+                if (!execute)
+                    bitMEXApi.DeleteOrders(jCointaner["orderID"].ToString());
+
+
             }
         }
         catch (Exception ex)
@@ -467,6 +511,18 @@ class MainClass
 
     }
 
+
+    static double getPriceActual(string type)
+    {
+        List<BitMEX.OrderBook> listBook = bitMEXApi.GetOrderBook(pair, 1);
+        foreach (var item in listBook)
+        {
+            if (item.Side.ToUpper() == type.ToUpper())
+                return item.Price;
+        }
+
+        return 0;
+    }
 
     static bool getCandles()
     {
@@ -494,7 +550,10 @@ class MainClass
             Array.Reverse(arrayPriceVolume);
             Array.Reverse(arrayPriceOpen);
 
-            Console.Title = DateTime.Now.ToString() + " - " + pair + " - $ " + arrayPriceClose[99].ToString() + " v" + version + " - " + bitmexDomain;
+
+
+            
+            Console.Title = DateTime.Now.ToString() + " - " + pair + " - $ " + arrayPriceClose[99].ToString() + " v" + version + " - " + bitmexDomain + " | Price buy " + getPriceActual("Buy") + " | Price Sell " + getPriceActual("Sell");
             return true;
         }
         catch (Exception ex)
