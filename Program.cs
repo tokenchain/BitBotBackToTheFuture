@@ -68,7 +68,7 @@ class MainClass
             log("Load config...");
             log("Considere DOAR para o projeto!");
             log("Vamos aguardar 1 min para voce doar ;) ... ");
-            //System.Threading.Thread.Sleep(60000);
+            System.Threading.Thread.Sleep(60000);
 
             String jsonConfig = System.IO.File.ReadAllText(location + "key.txt");
             JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(jsonConfig, (typeof(JContainer)));
@@ -425,12 +425,12 @@ class MainClass
     }
 
 
-    static bool existsOrderOpen(string side)
+    static bool existsOrderOpenById(string id)
     {
         List<BitMEX.Order> lst = bitMEXApi.GetOpenOrders(pair);
         foreach (var item in lst)
         {
-            if (item.Side.ToUpper() == side.ToUpper())
+            if (item.OrderId.ToUpper().Trim() == id.ToUpper().Trim())
                 return true;
         }
         return false;
@@ -453,7 +453,7 @@ class MainClass
                 log("wait 30s total...");
                 for (int i = 0; i < 30; i++)
                 {
-                    if (!existsOrderOpen(side))
+                    if (!existsOrderOpenById(jCointaner["orderID"].ToString()))
                     {
                         price -= (price * profit) / 100;
                         price = Math.Abs(Math.Floor(price));
@@ -481,7 +481,7 @@ class MainClass
                 log("wait 30s total...");
                 for (int i = 0; i < 30; i++)
                 {
-                    if (!existsOrderOpen(side))
+                    if (!existsOrderOpenById(jCointaner["orderID"].ToString()))
                     {                        
                         price += (price * profit) / 100;
                         price = Math.Abs( Math.Floor(price));
