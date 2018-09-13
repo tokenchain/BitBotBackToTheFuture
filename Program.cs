@@ -9,12 +9,22 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
+
+enum TendencyMarket
+{
+    HIGH,
+    NORMAL,
+    LOW,
+    VERY_LOW,
+    VERY_HIGH
+}
+
 class MainClass
 {
 
 
     //REAL NET
-    public static string version = "0.0.0.9";
+    public static string version = "0.0.0.10";
     public static string location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\";
     public static string bitmexKey = "";
     public static string bitmexSecret = "";
@@ -32,6 +42,7 @@ class MainClass
     public static double profit = 0;
     public static double fee = 0;
     public static string bitmexDomain = "";
+    public static TendencyMarket tendencyMarket = TendencyMarket.NORMAL;
     public static BitMEX.BitMEXApi bitMEXApi = null;
 
     public static List<IIndicator> lstIndicatorsAll = new List<IIndicator>();
@@ -68,7 +79,7 @@ class MainClass
             log("Load config...");
             log("Considere DOAR para o projeto!");
             log("Vamos aguardar 1 min para voce doar ;) ... ");
-            System.Threading.Thread.Sleep(60000);
+            //System.Threading.Thread.Sleep(60000);
 
             String jsonConfig = System.IO.File.ReadAllText(location + "key.txt");
             JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(jsonConfig, (typeof(JContainer)));
@@ -170,246 +181,256 @@ class MainClass
 
             if (jCointaner["webserver"].ToString() == "enable")
                 System.Diagnostics.Process.Start(jCointaner["webserverConfig"].ToString());
+
+
+            bool automaticTendency = statusLong == "automatic";
+
             //LOOP 
             while (true)
             {
+                if(automaticTendency)
+                    verifyTendency();
                 //GET CANDLES
                 if (getCandles())
                 {
 
-                    log("");
-                    log("==========================================================");
-                    log(" ==================== Verify LONG OPERATION =============");
-                    log("==========================================================");
-                    /////VERIFY OPERATION LONG
-                    string operation = "buy";
-                    //VERIFY INDICATORS ENTRY
-                    foreach (var item in lstIndicatorsEntry)
+                    if (statusLong == "enable")
                     {
-                        Operation operationBuy = item.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
-                        log("Indicator: " + item.getName());
-                        log("Result1: " + item.getResult());
-                        log("Result2: " + item.getResult2());
-                        log("Operation: " + operationBuy.ToString());
                         log("");
-                        if (operationBuy != Operation.buy)
+                        log("==========================================================");
+                        log(" ==================== Verify LONG OPERATION =============");
+                        log("==========================================================");
+                        /////VERIFY OPERATION LONG
+                        string operation = "buy";
+                        //VERIFY INDICATORS ENTRY
+                        foreach (var item in lstIndicatorsEntry)
                         {
-                            operation = "nothing";
-                            break;
-                        }
-                    }
-
-                    //VERIFY INDICATORS CROSS
-                    if (operation == "buy")
-                    {
-                        //Prepare to long                        
-                        while (true)
-                        {
-                            log("wait operation long...");
-                            getCandles();
-                            foreach (var item in lstIndicatorsEntryCross)
+                            Operation operationBuy = item.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
+                            log("Indicator: " + item.getName());
+                            log("Result1: " + item.getResult());
+                            log("Result2: " + item.getResult2());
+                            log("Operation: " + operationBuy.ToString());
+                            log("");
+                            if (operationBuy != Operation.buy)
                             {
-                                Operation operationBuy = item.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
-                                log("Indicator Cross: " + item.getName());
-                                log("Result1: " + item.getResult());
-                                log("Result2: " + item.getResult2());
-                                log("Operation: " + operationBuy.ToString());
-                                log("");
+                                operation = "nothing";
+                                break;
+                            }
+                        }
 
-                                if (item.getTypeIndicator() == TypeIndicator.Cross)
+                        //VERIFY INDICATORS CROSS
+                        if (operation == "buy")
+                        {
+                            //Prepare to long                        
+                            while (true)
+                            {
+                                log("wait operation long...");
+                                getCandles();
+                                foreach (var item in lstIndicatorsEntryCross)
                                 {
-                                    if (operationBuy == Operation.buy)
+                                    Operation operationBuy = item.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
+                                    log("Indicator Cross: " + item.getName());
+                                    log("Result1: " + item.getResult());
+                                    log("Result2: " + item.getResult2());
+                                    log("Operation: " + operationBuy.ToString());
+                                    log("");
+
+                                    if (item.getTypeIndicator() == TypeIndicator.Cross)
+                                    {
+                                        if (operationBuy == Operation.buy)
+                                        {
+                                            operation = "long";
+                                            break;
+                                        }
+                                    }
+                                    else if (operationBuy != Operation.buy)
                                     {
                                         operation = "long";
                                         break;
                                     }
                                 }
-                                else if (operationBuy != Operation.buy)
-                                {
+                                if (lstIndicatorsEntryCross.Count == 0)
                                     operation = "long";
+                                if (operation != "buy")
                                     break;
-                                }
-                            }
-                            if (lstIndicatorsEntryCross.Count == 0)
-                                operation = "long";
-                            if (operation != "buy")
-                                break;
-                            log("wait " + interval + "ms");
-                            Thread.Sleep(interval);
+                                log("wait " + interval + "ms");
+                                Thread.Sleep(interval);
 
+                            }
                         }
-                    }
 
-                    //VERIFY INDICATORS DECISION
-                    if (operation == "long" && lstIndicatorsEntryDecision.Count > 0)
-                    {
-                        operation = "decision";
-                        foreach (var item in lstIndicatorsEntryDecision)
+                        //VERIFY INDICATORS DECISION
+                        if (operation == "long" && lstIndicatorsEntryDecision.Count > 0)
                         {
-                            Operation operationBuy = item.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
-                            log("Indicator Decision: " + item.getName());
-                            log("Result1: " + item.getResult());
-                            log("Result2: " + item.getResult2());
-                            log("Operation: " + operationBuy.ToString());
-                            log("");
-
-
-                            if (getValue("indicatorsEntryDecision", item.getName(), "decision") == "enable" && getValue("indicatorsEntryDecision", item.getName(), "tendency") == "enable")
-                            {
-                                int decisionPoint = int.Parse(getValue("indicatorsEntryDecision", item.getName(), "decisionPoint"));
-                                if (item.getResult() >= decisionPoint && item.getTendency() == Tendency.high)
-                                {
-                                    operation = "long";
-                                    break;
-                                }
-                            }
-
-                            if (getValue("indicatorsEntryDecision", item.getName(), "decision") == "enable")
-                            {
-                                int decisionPoint = int.Parse(getValue("indicatorsEntryDecision", item.getName(), "decisionPoint"));
-                                if (item.getResult() >= decisionPoint)
-                                {
-                                    operation = "long";
-                                    break;
-                                }
-                            }
-                            if (getValue("indicatorsEntryDecision", item.getName(), "tendency") == "enable")
-                            {                                
-                                if (item.getTendency() == Tendency.high)
-                                {
-                                    operation = "long";
-                                    break;
-                                }
-                            }
-
-                        }
-                    }
-
-
-                    //EXECUTE OPERATION
-                    if (operation == "long")
-                        makeOrder("Buy");
-
-                    ////////////FINAL VERIFY OPERATION LONG//////////////////
-
-
-
-                    //////////////////////////////////////////////////////////////
-                    log("");
-                    log("==========================================================");
-                    log(" ==================== Verify SHORT OPERATION =============");
-                    log("==========================================================");
-                    /////VERIFY OPERATION LONG
-                    operation = "sell";
-                    //VERIFY INDICATORS ENTRY
-                    foreach (var item in lstIndicatorsEntry)
-                    {
-                        Operation operationBuy = item.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
-                        log("Indicator: " + item.getName());
-                        log("Result1: " + item.getResult());
-                        log("Result2: " + item.getResult2());
-                        log("Operation: " + operationBuy.ToString());
-                        log("");
-                        if (operationBuy != Operation.sell)
-                        {
-                            operation = "nothing";
-                            break;
-                        }
-                    }
-
-                    //VERIFY INDICATORS CROSS
-                    if (operation == "sell")
-                    {
-                        //Prepare to long                        
-                        while (true)
-                        {
-                            log("wait operation short...");
-                            getCandles();
-                            foreach (var item in lstIndicatorsEntryCross)
+                            operation = "decision";
+                            foreach (var item in lstIndicatorsEntryDecision)
                             {
                                 Operation operationBuy = item.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
-                                log("Indicator Cross: " + item.getName());
+                                log("Indicator Decision: " + item.getName());
                                 log("Result1: " + item.getResult());
                                 log("Result2: " + item.getResult2());
                                 log("Operation: " + operationBuy.ToString());
                                 log("");
 
-                                if (item.getTypeIndicator() == TypeIndicator.Cross)
+
+                                if (getValue("indicatorsEntryDecision", item.getName(), "decision") == "enable" && getValue("indicatorsEntryDecision", item.getName(), "tendency") == "enable")
                                 {
-                                    if (operationBuy == Operation.sell)
+                                    int decisionPoint = int.Parse(getValue("indicatorsEntryDecision", item.getName(), "decisionPoint"));
+                                    if (item.getResult() >= decisionPoint && item.getTendency() == Tendency.high)
+                                    {
+                                        operation = "long";
+                                        break;
+                                    }
+                                }
+
+                                if (getValue("indicatorsEntryDecision", item.getName(), "decision") == "enable")
+                                {
+                                    int decisionPoint = int.Parse(getValue("indicatorsEntryDecision", item.getName(), "decisionPoint"));
+                                    if (item.getResult() >= decisionPoint)
+                                    {
+                                        operation = "long";
+                                        break;
+                                    }
+                                }
+                                if (getValue("indicatorsEntryDecision", item.getName(), "tendency") == "enable")
+                                {
+                                    if (item.getTendency() == Tendency.high)
+                                    {
+                                        operation = "long";
+                                        break;
+                                    }
+                                }
+
+                            }
+                        }
+
+
+                        //EXECUTE OPERATION
+                        if (operation == "long")
+                            makeOrder("Buy");
+
+                        ////////////FINAL VERIFY OPERATION LONG//////////////////
+                    }
+
+
+                    if (statusShort == "enable")
+                    {
+                        //////////////////////////////////////////////////////////////
+                        log("");
+                        log("==========================================================");
+                        log(" ==================== Verify SHORT OPERATION =============");
+                        log("==========================================================");
+                        /////VERIFY OPERATION LONG
+                        string operation = "sell";
+                        //VERIFY INDICATORS ENTRY
+                        foreach (var item in lstIndicatorsEntry)
+                        {
+                            Operation operationBuy = item.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
+                            log("Indicator: " + item.getName());
+                            log("Result1: " + item.getResult());
+                            log("Result2: " + item.getResult2());
+                            log("Operation: " + operationBuy.ToString());
+                            log("");
+                            if (operationBuy != Operation.sell)
+                            {
+                                operation = "nothing";
+                                break;
+                            }
+                        }
+
+                        //VERIFY INDICATORS CROSS
+                        if (operation == "sell")
+                        {
+                            //Prepare to long                        
+                            while (true)
+                            {
+                                log("wait operation short...");
+                                getCandles();
+                                foreach (var item in lstIndicatorsEntryCross)
+                                {
+                                    Operation operationBuy = item.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
+                                    log("Indicator Cross: " + item.getName());
+                                    log("Result1: " + item.getResult());
+                                    log("Result2: " + item.getResult2());
+                                    log("Operation: " + operationBuy.ToString());
+                                    log("");
+
+                                    if (item.getTypeIndicator() == TypeIndicator.Cross)
+                                    {
+                                        if (operationBuy == Operation.sell)
+                                        {
+                                            operation = "short";
+                                            break;
+                                        }
+                                    }
+                                    else if (operationBuy != Operation.sell)
                                     {
                                         operation = "short";
                                         break;
                                     }
                                 }
-                                else if (operationBuy != Operation.sell)
-                                {
+                                if (lstIndicatorsEntryCross.Count == 0)
                                     operation = "short";
+                                if (operation != "sell")
                                     break;
-                                }
+                                log("wait " + interval + "ms");
+                                Thread.Sleep(interval);
+
                             }
-                            if (lstIndicatorsEntryCross.Count == 0)
-                                operation = "short";
-                            if (operation != "sell")
-                                break;
-                            log("wait " + interval + "ms");
-                            Thread.Sleep(interval);
-
                         }
-                    }
 
-                    //VERIFY INDICATORS DECISION
-                    if (operation == "short" && lstIndicatorsEntryDecision.Count > 0)
-                    {
-                        operation = "decision";
-                        foreach (var item in lstIndicatorsEntryDecision)
+                        //VERIFY INDICATORS DECISION
+                        if (operation == "short" && lstIndicatorsEntryDecision.Count > 0)
                         {
-                            Operation operationBuy = item.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
-                            log("Indicator Decision: " + item.getName());
-                            log("Result1: " + item.getResult());
-                            log("Result2: " + item.getResult2());
-                            log("Operation: " + operationBuy.ToString());
-                            log("");
-
-
-                            if (getValue("indicatorsEntryDecision", item.getName(), "decision") == "enable" && getValue("indicatorsEntryDecision", item.getName(), "tendency") == "enable")
+                            operation = "decision";
+                            foreach (var item in lstIndicatorsEntryDecision)
                             {
-                                int decisionPoint = int.Parse(getValue("indicatorsEntryDecision", item.getName(), "decisionPoint"));
-                                if (item.getResult() <= decisionPoint && item.getTendency() == Tendency.low)
-                                {
-                                    operation = "short";
-                                    break;
-                                }
-                            }
+                                Operation operationBuy = item.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
+                                log("Indicator Decision: " + item.getName());
+                                log("Result1: " + item.getResult());
+                                log("Result2: " + item.getResult2());
+                                log("Operation: " + operationBuy.ToString());
+                                log("");
 
-                            if (getValue("indicatorsEntryDecision", item.getName(), "decision") == "enable")
-                            {
-                                int decisionPoint = int.Parse(getValue("indicatorsEntryDecision", item.getName(), "decisionPoint"));
-                                if (item.getResult() <= decisionPoint)
-                                {
-                                    operation = "short";
-                                    break;
-                                }
-                            }
-                            if (getValue("indicatorsEntryDecision", item.getName(), "tendency") == "enable")
-                            {
-                                if (item.getTendency() == Tendency.low)
-                                {
-                                    operation = "short";
-                                    break;
-                                }
-                            }
 
+                                if (getValue("indicatorsEntryDecision", item.getName(), "decision") == "enable" && getValue("indicatorsEntryDecision", item.getName(), "tendency") == "enable")
+                                {
+                                    int decisionPoint = int.Parse(getValue("indicatorsEntryDecision", item.getName(), "decisionPoint"));
+                                    if (item.getResult() <= decisionPoint && item.getTendency() == Tendency.low)
+                                    {
+                                        operation = "short";
+                                        break;
+                                    }
+                                }
+
+                                if (getValue("indicatorsEntryDecision", item.getName(), "decision") == "enable")
+                                {
+                                    int decisionPoint = int.Parse(getValue("indicatorsEntryDecision", item.getName(), "decisionPoint"));
+                                    if (item.getResult() <= decisionPoint)
+                                    {
+                                        operation = "short";
+                                        break;
+                                    }
+                                }
+                                if (getValue("indicatorsEntryDecision", item.getName(), "tendency") == "enable")
+                                {
+                                    if (item.getTendency() == Tendency.low)
+                                    {
+                                        operation = "short";
+                                        break;
+                                    }
+                                }
+
+                            }
                         }
+
+
+                        //EXECUTE OPERATION
+                        if (operation == "short")
+                            makeOrder("Sell");
+
+                        ////////////FINAL VERIFY OPERATION LONG//////////////////
                     }
-
-
-                    //EXECUTE OPERATION
-                    if (operation == "short")
-                        makeOrder("Sell");
-
-                    ////////////FINAL VERIFY OPERATION LONG//////////////////
-
 
                 }
                 log("wait " + interval + "ms");
@@ -439,13 +460,13 @@ class MainClass
 
     static void makeOrder(string side)
     {
+        bool execute = false;
         try
         {            
             log("Make order " + side);
             
             if (side == "Sell" && statusShort == "enable")
-            {
-                bool execute = false;
+            {                
                 double price = Math.Abs(getPriceActual(side) + 1);
                 String json = bitMEXApi.PostOrderPostOnly(pair, side, price, qtdyContacts);
                 JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
@@ -462,7 +483,7 @@ class MainClass
                         execute = true;
                         break;
                     }
-                    log("wait 1s...");
+                    log("wait order limit 1s...");
                     Thread.Sleep(1000);
                 }
 
@@ -472,8 +493,7 @@ class MainClass
 
             }
             if (side == "Buy" && statusLong == "enable")
-            {
-                bool execute = false;
+            {                
                 double price = Math.Abs(getPriceActual(side) - 1);
                 String json = bitMEXApi.PostOrderPostOnly(pair, side, price , qtdyContacts);
                 JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
@@ -490,7 +510,7 @@ class MainClass
                         execute = true;
                         break;
                     }
-                    log("wait 1s...");
+                    log("wait order limit 1s...");
                     Thread.Sleep(1000);
                 }
 
@@ -506,9 +526,58 @@ class MainClass
             log("makeOrder()::" + ex.Message + ex.StackTrace);
         }
 
-        log("wait " + intervalOrder + "ms");
-        Thread.Sleep(intervalOrder);
+        if (execute)
+        {
+            log("wait " + intervalOrder*2 + "ms");
+            Thread.Sleep(intervalOrder*2);            
 
+        }
+    }
+
+    static void verifyTendency()
+    {
+        try
+        {
+            String json = Http.get("https://api.binance.com/api/v1/ticker/24hr?symbol=BTCUSDT");
+            JContainer j = (Newtonsoft.Json.Linq.JContainer)JsonConvert.DeserializeObject(json);
+
+            tendencyMarket = TendencyMarket.NORMAL;
+            decimal priceChangePercent = decimal.Parse(j["priceChangePercent"].ToString().Replace(".", ","));
+            if (priceChangePercent < 0m)
+                tendencyMarket = TendencyMarket.LOW;
+            if (priceChangePercent > 0m && priceChangePercent < 1.5m)
+                tendencyMarket = TendencyMarket.NORMAL;
+            if (priceChangePercent > 1.5m)
+                tendencyMarket = TendencyMarket.HIGH;
+            if (priceChangePercent < -2)
+                tendencyMarket = TendencyMarket.VERY_LOW;
+            if (priceChangePercent > 3.5m)
+                tendencyMarket = TendencyMarket.VERY_HIGH;
+
+
+            if (tendencyMarket == TendencyMarket.VERY_HIGH || tendencyMarket == TendencyMarket.HIGH)
+            {
+                statusShort = "disable";
+                statusLong = "enable";
+            }           
+            else if (tendencyMarket == TendencyMarket.NORMAL)
+            {
+                statusShort = "enable";
+                statusLong = "enable";
+            }
+            else if (tendencyMarket == TendencyMarket.LOW || tendencyMarket == TendencyMarket.VERY_LOW)
+            {
+                statusShort = "enable";
+                statusLong = "disable";
+            }
+           
+            
+
+        }
+        catch (Exception ex)
+        {            
+
+        }
     }
 
 
@@ -553,7 +622,7 @@ class MainClass
 
 
             
-            Console.Title = DateTime.Now.ToString() + " - " + pair + " - $ " + arrayPriceClose[99].ToString() + " v" + version + " - " + bitmexDomain + " | Price buy " + getPriceActual("Buy") + " | Price Sell " + getPriceActual("Sell");
+            Console.Title = DateTime.Now.ToString() + " - " + pair + " - $ " + arrayPriceClose[99].ToString() + " v" + version + " - " + bitmexDomain + " | Price buy " + getPriceActual("Buy") + " | Price Sell " + getPriceActual("Sell") + " | " + tendencyMarket;
             return true;
         }
         catch (Exception ex)
