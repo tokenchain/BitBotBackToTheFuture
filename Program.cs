@@ -123,6 +123,7 @@ class MainClass
             log("");
             log("Wallet: " + bitMEXApi.GetWallet());
 
+            lstIndicatorsAll.Add(new IndicatorADX());
             lstIndicatorsAll.Add(new IndicatorMFI());
             lstIndicatorsAll.Add(new IndicatorBBANDS());
             lstIndicatorsAll.Add(new IndicatorCCI());
