@@ -75,9 +75,9 @@ class MainClass
             Console.ForegroundColor = ConsoleColor.White;
 
             log("Deleron - Back to the future - v" + version + " - Bitmex version");
-            log("by Matheus Grijo ",ConsoleColor.Green);
+            log("by Matheus Grijo ", ConsoleColor.Green);
             log(" ======= HALL OF FAME BOTMEX  ======= ");
-            log(" - Lucas Sousa",ConsoleColor.Magenta);
+            log(" - Lucas Sousa", ConsoleColor.Magenta);
             log(" - Carlos Morato", ConsoleColor.Magenta);
             log(" - Luis Felipe Alves", ConsoleColor.Magenta);
             log(" ======= END HALL OF FAME BOTMEX  ======= ");
@@ -94,7 +94,7 @@ class MainClass
             log("Considere DOAR para o projeto!", ConsoleColor.Green);
             log("Vamos aguardar 10 min para voce doar ;) ... ", ConsoleColor.Blue);
             log("ATENCAO, PARA FACILITAR A DOACAO DAQUI A 30 SEGUNDOS VAMOS ABRIR UMA PAGINA PARA VOCE!", ConsoleColor.Green);
-            System.Threading.Thread.Sleep(30000);            
+            System.Threading.Thread.Sleep(30000);
             System.Diagnostics.Process.Start("https://www.blockchain.com/btc/payment_request?address=1AnttTLGhzJsX7T96SutWS4N9wPYuBThu8&amount_local=30&currency=USD&nosavecurrency=true");
             log("Perfeito, agora aguarde os 9 minutos e 30 segundos restantes para iniciar o BOTMEX, enquanto isto estamos carregando as suas configuracoes...", ConsoleColor.Magenta);
             String jsonConfig = System.IO.File.ReadAllText(location + "key.txt");
@@ -102,7 +102,7 @@ class MainClass
 
             System.Threading.Thread.Sleep(60000 * 10);
 
-            
+
 
             bitmexKey = jCointaner["key"].ToString();
             bitmexSecret = jCointaner["secret"].ToString();
@@ -258,7 +258,7 @@ class MainClass
 
                     int qntContacts = (Math.Abs(positionContracts) - Math.Abs(getOpenOrderQty()));
 
-                    log("Compra de " + qntContacts);
+
                     if (positionContracts > 0)
                     {
                         string side = "Sell";
@@ -893,21 +893,21 @@ class MainClass
         return null;
     }
 
-    static void log(string value,ConsoleColor color = ConsoleColor.White)
+    static void log(string value, ConsoleColor color = ConsoleColor.White)
     {
         try
         {
-            
+
             value = "[" + DateTime.Now.ToString() + "] - " + value;
             Console.ForegroundColor = color;
             Console.WriteLine(value);
             Console.ForegroundColor = ConsoleColor.White;
 
             System.IO.StreamWriter w = new StreamWriter(location + DateTime.Now.ToString("yyyyMMdd") + "_log.txt", true);
-            w.WriteLine(value);            
+            w.WriteLine(value);
             w.Close();
             w.Dispose();
-            
+
         }
         catch { }
     }
