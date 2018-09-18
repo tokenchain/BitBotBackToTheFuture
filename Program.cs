@@ -41,6 +41,7 @@ class MainClass
     public static int intervalCancelOrder = 30;
     public static int positionContracts = 0;
     public static double profit = 0;
+    public static int limiteOrder = 0;
     public static double fee = 0;
     public static double stoploss = 10;
     public static double stopgain = 15;
@@ -122,6 +123,7 @@ class MainClass
             stoploss = double.Parse(jCointaner["stoploss"].ToString());
             stopgain = double.Parse(jCointaner["stopgain"].ToString());
             roeAutomatic = jCointaner["roe"].ToString() == "automatic";
+            limiteOrder = int.Parse(jCointaner["limiteOrder"].ToString());
 
             bitMEXApi = new BitMEX.BitMEXApi(bitmexKey, bitmexSecret, bitmexDomain);
 
@@ -216,7 +218,7 @@ class MainClass
             while (true)
             {
 
-                positionContracts = Math.Abs(getPosition());
+                positionContracts = getPosition(); // FIX CARLOS MORATO
                 roe = getRoe();
 
 
@@ -250,7 +252,7 @@ class MainClass
 
                 //SEARCH POSITION AND MAKE ORDER
                 //By Carlos Morato
-                if (roeAutomatic && (Math.Abs(getOpenOrderQty()) < positionContracts))
+                if (roeAutomatic && (Math.Abs(getOpenOrderQty()) < Math.Abs(positionContracts)))
                 {
                     log("Get Position " + positionContracts);
 
@@ -314,7 +316,7 @@ class MainClass
                 //CANCEL ORDER WITHOUT POSITION
                 //By Carlos Morato
 
-                if (positionContracts != Math.Abs(getOpenOrderQty()))
+                if (Math.Abs(positionContracts) != Math.Abs(getOpenOrderQty()))
                     bitMEXApi.CancelAllOpenOrders(pair);
 
                 if (automaticTendency)
@@ -594,7 +596,7 @@ class MainClass
         {
             log("Make order " + side);
 
-            if (side == "Sell" && statusShort == "enable")
+            if (side == "Sell" && statusShort == "enable" && Math.Abs(limiteOrder) > Math.Abs(bitMEXApi.GetOpenOrders(pair).Count))
             {
                 double price = Math.Abs(getPriceActual(side) + 1);
                 String json = bitMEXApi.PostOrderPostOnly(pair, side, price, qtdyContacts);
@@ -621,7 +623,7 @@ class MainClass
                     bitMEXApi.DeleteOrders(jCointaner["orderID"].ToString());
 
             }
-            if (side == "Buy" && statusLong == "enable")
+            if (side == "Buy" && statusLong == "enable" && Math.Abs(limiteOrder) > Math.Abs(bitMEXApi.GetOpenOrders(pair).Count))
             {
                 double price = Math.Abs(getPriceActual(side) - 1);
                 String json = bitMEXApi.PostOrderPostOnly(pair, side, price, qtdyContacts);
