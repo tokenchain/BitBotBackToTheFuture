@@ -316,7 +316,7 @@ class MainClass
                 //CANCEL ORDER WITHOUT POSITION
                 //By Carlos Morato
 
-                if (Math.Abs(positionContracts) != Math.Abs(getOpenOrderQty()))
+                if (roeAutomatic && Math.Abs(positionContracts) != Math.Abs(getOpenOrderQty()))
                     bitMEXApi.CancelAllOpenOrders(pair);
 
                 if (automaticTendency)
