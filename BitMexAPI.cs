@@ -366,8 +366,18 @@ namespace BitMEX
         public double? AvgEntryPrice { get; set; }
         public double? BreakEvenPrice { get; set; }
         public double? LiquidationPrice { get; set; }
+        public double? LastValue { get; set; }
 
         public string Symbol { get; set; }
+
+        public double percentual()
+        {
+            if (UnrealisedPnl < 0)            
+                return (((((double)UnrealisedPnl * (-1)) * 100) / (double)LastValue) * (double)Leverage) * (-1);
+            else                
+                return ((((double)UnrealisedPnl) * 100) / (double)LastValue) * (double)Leverage;            
+        }
+                
     }
 
     public class Order

@@ -26,10 +26,26 @@ public class WebServer
                 sb.AppendLine("<b>GITHUB</b> http://github.com/matheusgrijo<br/><i>Auto refresh every 120 seconds</i></div></div>");
                 sb.AppendLine("<hr>");
 
-                sb.AppendLine("Status: <b>running</b><br/>");
+                double perc = 0;
+
+                try { perc = ((double.Parse(ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 1][2].ToString()) * 100) / double.Parse(ds.Tables[0].Rows[0][2].ToString())) - 100; }
+                catch { }
+
+                sb.AppendLine("<div class='row'><div class='col-sm'>Status: <b>running</b><br/>");
+                sb.AppendLine("Site: <b>" + MainClass.bitmexDomain + "</b><br/>");
                 sb.AppendLine("Last update: <b>" + DateTime.Now.ToString() + "</b><br/>");
-                sb.AppendLine("OpenOrders: <b>" + ds.Tables[1].Rows[0]["Value"].ToString() + "</b><br/>");
-                sb.AppendLine("Amount: <b>" + ds.Tables[1].Rows[1]["Value"].ToString() + "</b><br/>");
+                sb.AppendLine("Open position: <b>" + MainClass.positionContracts.ToString() + "</b><br/>");
+                sb.AppendLine("Open orders: <b>" + ds.Tables[1].Rows[0]["Value"].ToString() + "</b><br/>");
+                sb.AppendLine("Amount: <b>" + ds.Tables[1].Rows[1]["Value"].ToString() + "</b> ("+ double.Parse(ds.Tables[1].Rows[1]["Value"].ToString())/100000000 + " BTC)<br/>");
+                sb.AppendLine("<h3>Profit: <b>" + perc + "%</b><br/></h3>");
+                sb.AppendLine("</div><div class='col-sm'>Tendency market: <b>" + MainClass.tendencyMarket.ToString() + "</b><br/>");
+                sb.AppendLine("Status long: <b>" + MainClass.statusLong.ToString() + "</b><br/>");
+                sb.AppendLine("Status short: <b>" + MainClass.statusShort.ToString() + "</b><br/>");
+                sb.AppendLine("Time graph: <b>" + MainClass.timeGraph.ToString() + "</b><br/>");
+                sb.AppendLine("Qty contracts: <b>" + MainClass.qtdyContacts.ToString() + "</b><br/>");
+                sb.AppendLine("ROE automatic: <b>" + MainClass.roeAutomatic.ToString() + "</b><br/>");
+                sb.AppendLine("Stop loss: <b>" + MainClass.stoploss.ToString() + "%</b><br/>");
+                sb.AppendLine("Stop gain: <b>" + MainClass.stopgain.ToString() + "%</b><br/></div></div>");
 
                 try
                 {
@@ -41,14 +57,14 @@ public class WebServer
                         graph += "['" + ds.Tables[0].Rows[i][0].ToString() + "'," + ds.Tables[0].Rows[i][2].ToString() + "],";
                     }
 
-                    double perc = 0;
-
-                    try { perc = ((double.Parse(ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 1][2].ToString()) * 100) / double.Parse(ds.Tables[0].Rows[0][2].ToString())) - 100; }
-                    catch { }
+                    
 
                     graph = graph.Substring(0, graph.Length - 1);
 
-                    sb.AppendLine("Profit: <b>" + perc + "%</b><br/>");
+
+
+
+                    
                     sb.Append("<script>google.charts.load('current', {packages: ['corechart', 'line']}); " +
                                    " google.charts.setOnLoadCallback(drawBasic); " +
 
