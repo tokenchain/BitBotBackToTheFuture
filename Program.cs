@@ -27,27 +27,6 @@ class MainClass
     //REAL NET
     public static string version = "0.0.0.11";
     public static string location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\";
-    //public static string bitmexKey = "";
-    //public static string bitmexSecret = "";
-    //public static string bitmexKeyWeb = "";
-    //public static string bitmexSecretWeb = "";
-    //public static string timeGraph = "";
-    //public static string statusShort = "";
-    //public static string statusLong = "";
-    //public static string pair = "";
-    //public static int qtdyContacts = 0;
-    //public static int interval = 0;
-    //public static int intervalOrder = 0;
-    //public static int intervalCapture = 0;
-    //public static int intervalCancelOrder = 30;
-    //public static int positionContracts = 0;
-    //public static double profit = 0;
-    //public static int limiteOrder = 0;
-    //public static double fee = 0;
-    //public static double stoploss = 10;
-    //public static double stopgain = 15;
-    //public static string bitmexDomain = "";
-    //public static bool roeAutomatic = true;
     public static double roe = 0;
     public static TendencyMarket tendencyMarket = TendencyMarket.NORMAL;
     public static BitMEX.BitMEXApi bitMEXApi = null;
