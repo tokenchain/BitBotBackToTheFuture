@@ -75,13 +75,12 @@ class MainClass
             log("Considere DOAR para o projeto!", ConsoleColor.Green);
             log("Vamos aguardar 10 min para voce doar ;) ... ", ConsoleColor.Blue);
             log("ATENCAO, PARA FACILITAR A DOACAO DAQUI A 30 SEGUNDOS VAMOS ABRIR UMA PAGINA PARA VOCE!", ConsoleColor.Green);
-            //System.Threading.Thread.Sleep(30000);
-            //System.Diagnostics.Process.Start("https://www.blockchain.com/btc/payment_request?address=1AnttTLGhzJsX7T96SutWS4N9wPYuBThu8&amount_local=30&currency=USD&nosavecurrency=true");
-            //log("Perfeito, agora aguarde os 9 minutos e 30 segundos restantes para iniciar o BOTMEX, enquanto isto estamos carregando as suas configuracoes...", ConsoleColor.Magenta);
-            //String jsonConfig = System.IO.File.ReadAllText(location + "key.txt");
-            //JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(jsonConfig, (typeof(JContainer)));
-
-            //System.Threading.Thread.Sleep(60000 * 10);
+            System.Threading.Thread.Sleep(30000);
+            System.Diagnostics.Process.Start("https://www.blockchain.com/btc/payment_request?address=1AnttTLGhzJsX7T96SutWS4N9wPYuBThu8&amount_local=30&currency=USD&nosavecurrency=true");
+            log("Perfeito, agora aguarde os 9 minutos e 30 segundos restantes para iniciar o BOTMEX, enquanto isto estamos carregando as suas configuracoes...", ConsoleColor.Magenta);
+            String jsonConfig = System.IO.File.ReadAllText(location + "key.txt");
+            JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(jsonConfig, (typeof(JContainer)));
+            System.Threading.Thread.Sleep(60000 * 10);
 
            
 

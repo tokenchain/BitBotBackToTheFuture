@@ -11,7 +11,7 @@ namespace BitBotBackToTheFuture
     class JsonParse
     {
         private static string location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\";
-        private static string configJsonFileDirectory = location + "config.json";
+        private static string configJsonFileDirectory = location + "key.txt";
 
         public string bitmexKey { get; private set; }
         public string bitmexSecret { get; private set; }
