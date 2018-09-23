@@ -3,10 +3,12 @@ using System.Net;
 using System.Threading;
 using System.Linq;
 using System.Text;
-
+using BitBotBackToTheFuture;
 
 public class WebServer
 {
+    private static JsonParse configJson = new JsonParse();
+
     public static string SendResponse(HttpListenerRequest request)
     {
         lock (MainClass.data)
@@ -32,20 +34,20 @@ public class WebServer
                 catch { }
 
                 sb.AppendLine("<div class='row'><div class='col-sm'>Status: <b>running</b><br/>");
-                sb.AppendLine("Site: <b>" + MainClass.bitmexDomain + "</b><br/>");
+                sb.AppendLine("Site: <b>" + configJson.bitmexDomain + "</b><br/>");
                 sb.AppendLine("Last update: <b>" + DateTime.Now.ToString() + "</b><br/>");
-                sb.AppendLine("Open position: <b>" + MainClass.positionContracts.ToString() + "</b><br/>");
+                sb.AppendLine("Open position: <b>" + configJson.positionContracts.ToString() + "</b><br/>");
                 sb.AppendLine("Open orders: <b>" + ds.Tables[1].Rows[0]["Value"].ToString() + "</b><br/>");
                 sb.AppendLine("Amount: <b>" + ds.Tables[1].Rows[1]["Value"].ToString() + "</b> ("+ double.Parse(ds.Tables[1].Rows[1]["Value"].ToString())/100000000 + " BTC)<br/>");
                 sb.AppendLine("<h3>Profit: <b>" + perc + "%</b><br/></h3>");
                 sb.AppendLine("</div><div class='col-sm'>Tendency market: <b>" + MainClass.tendencyMarket.ToString() + "</b><br/>");
-                sb.AppendLine("Status long: <b>" + MainClass.statusLong.ToString() + "</b><br/>");
-                sb.AppendLine("Status short: <b>" + MainClass.statusShort.ToString() + "</b><br/>");
-                sb.AppendLine("Time graph: <b>" + MainClass.timeGraph.ToString() + "</b><br/>");
-                sb.AppendLine("Qty contracts: <b>" + MainClass.qtdyContacts.ToString() + "</b><br/>");
-                sb.AppendLine("ROE automatic: <b>" + MainClass.roeAutomatic.ToString() + "</b><br/>");
-                sb.AppendLine("Stop loss: <b>" + MainClass.stoploss.ToString() + "%</b><br/>");
-                sb.AppendLine("Stop gain: <b>" + MainClass.stopgain.ToString() + "%</b><br/></div></div>");
+                sb.AppendLine("Status long: <b>" + configJson.statusLong.ToString() + "</b><br/>");
+                sb.AppendLine("Status short: <b>" + configJson.statusShort.ToString() + "</b><br/>");
+                sb.AppendLine("Time graph: <b>" + configJson.timeGraph.ToString() + "</b><br/>");
+                sb.AppendLine("Qty contracts: <b>" + configJson.qtdyContacts.ToString() + "</b><br/>");
+                sb.AppendLine("ROE automatic: <b>" + configJson.roeAutomatic.ToString() + "</b><br/>");
+                sb.AppendLine("Stop loss: <b>" + configJson.stoploss.ToString() + "%</b><br/>");
+                sb.AppendLine("Stop gain: <b>" + configJson.stopgain.ToString() + "%</b><br/></div></div>");
 
                 try
                 {
@@ -132,10 +134,11 @@ public class WebServer
             }
             catch(Exception ex)
             {
-                return "<html><head><meta http-equiv='refresh' content='5' ><title>Wait...</title></head><body><center><img src='http://botmex.ninja/img/logo.png' /><br/>Wait...</center></body></html> ";
+
+                return "<html><head><meta http-equiv='refresh' content='5' ><title>Wait...</title></head><body><center><img src='http://botmex.ninja/img/logo.png' /><br/>Wait...</center></body></html> "+ ex.Message;
             }
         }
-    }
+   }
 
     private readonly HttpListener _listener = new HttpListener();
     private readonly Func<HttpListenerRequest, string> _responderMethod;

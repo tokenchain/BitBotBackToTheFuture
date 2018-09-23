@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Database.cs" />
+    <Compile Include="Http.cs" />
     <Compile Include="indicators\IIndicator.cs" />
     <Compile Include="indicators\IndicatorADX.cs" />
     <Compile Include="indicators\IndicatorBase.cs" />
@@ -63,6 +64,8 @@
     <Compile Include="indicators\IndicatorTrix.cs" />
     <Compile Include="indicators\IndicatorULTOSC.cs" />
     <Compile Include="indicators\IndicatorWILLR.cs" />
+    <Compile Include="JsonParse.cs" />
+    <Compile Include="LogClass.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BitMexAPI.cs" />
@@ -70,6 +73,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="key.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include=".gitignore" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
