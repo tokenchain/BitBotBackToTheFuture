@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using BitBotBackToTheFuture;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,8 @@ using System.Threading.Tasks;
 
 public class Database
 {
+    private static JsonParse configJson = new JsonParse();
+    private static string dataBaseFile = MainClass.location + "bd.xml";
     public static void captureDataJob()
     {
         while (true)
@@ -20,7 +23,7 @@ public class Database
             {
 
             }
-            System.Threading.Thread.Sleep(MainClass.intervalCapture);
+            System.Threading.Thread.Sleep(configJson.intervalCapture);
         }
     }
 
@@ -32,7 +35,7 @@ public class Database
             {
                 System.Data.DataSet ds = null;
                 bool create = false;
-                if (!System.IO.File.Exists(MainClass.location + "bd.xml"))
+                if (!System.IO.File.Exists(dataBaseFile))
                 {
                     System.Data.DataTable dt = new System.Data.DataTable("Balances");
                     dt.Columns.Add("Date");
@@ -51,29 +54,29 @@ public class Database
                     ds.DataSetName = "Database";
                     ds.Tables.Add(dt);
                     ds.Tables.Add(dtParameters);
-                    ds.WriteXml(MainClass.location + "bd.xml");
+                    ds.WriteXml(dataBaseFile);
                     create = true;
                 }
 
                 ds = new System.Data.DataSet();
-                ds.ReadXml(MainClass.location + "bd.xml");
+                ds.ReadXml(dataBaseFile);
 
-                BitMEX.BitMEXApi bitMEXApi = new BitMEX.BitMEXApi(MainClass.bitmexKeyWeb, MainClass.bitmexSecretWeb, MainClass.bitmexDomain);
+                BitMEX.BitMEXApi bitMEXApi = new BitMEX.BitMEXApi(configJson.bitmexKeyWeb, configJson.bitmexSecretWeb, configJson.bitmexDomain);
                 string json = bitMEXApi.GetWallet();
                 JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
 
                 if (create)
                     ds.Tables[0].Rows.Clear();
 
-                ds.Tables[0].Rows.Add(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), MainClass.pair, jCointaner[0]["walletBalance"].ToString());
+                ds.Tables[0].Rows.Add(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), configJson.pair, jCointaner[0]["walletBalance"].ToString());
 
                 ds.Tables[1].Rows.Clear();
-                ds.Tables[1].Rows.Add("OpenOrders", bitMEXApi.GetOpenOrders(MainClass.pair).Count);
+                ds.Tables[1].Rows.Add("OpenOrders", bitMEXApi.GetOpenOrders(configJson.pair).Count);
                 ds.Tables[1].Rows.Add("Amount", jCointaner[0]["walletBalance"].ToString());
 
 
-                System.IO.File.Delete(MainClass.location + "bd.xml");
-                ds.WriteXml(MainClass.location + "bd.xml");
+                System.IO.File.Delete(dataBaseFile);
+                ds.WriteXml(dataBaseFile);
 
             }
             catch
