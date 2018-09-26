@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>BitBotBackToTheFuture</RootNamespace>
     <AssemblyName>BitBotBackToTheFuture</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -28,6 +28,9 @@
     <ExternalConsole>true</ExternalConsole>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MySql.Data">
+      <HintPath>..\..\..\..\..\programas\powerpump\Bin\MySql.Data.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\BitMexSampleBot-master\BitMexSampleBot\bin\Debug\Newtonsoft.Json.dll</HintPath>
@@ -39,7 +42,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClassDBcs.cs" />
     <Compile Include="Database.cs" />
+    <Compile Include="Http.cs" />
     <Compile Include="indicators\IIndicator.cs" />
     <Compile Include="indicators\IndicatorADX.cs" />
     <Compile Include="indicators\IndicatorBase.cs" />
