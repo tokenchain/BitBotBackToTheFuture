@@ -25,7 +25,7 @@ class MainClass
 
 
     //REAL NET
-    public static string version = "0.0.0.11";
+    public static string version = "0.0.1.11";
     public static string location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\";
 
     public static string bitmexKey = "";
@@ -51,7 +51,7 @@ class MainClass
     public static bool roeAutomatic = true;
     public static bool usedb = false;
     public static bool scalper = true;
-    public static double roe = 0;
+
     public static double stepValue = 0.5;
     public static TendencyMarket tendencyMarket = TendencyMarket.NORMAL;
     public static BitMEX.BitMEXApi bitMEXApi = null;
@@ -101,12 +101,12 @@ class MainClass
             log("ATENCAO, PARA FACILITAR A DOACAO DAQUI A 30 SEGUNDOS VAMOS ABRIR UMA PAGINA PARA VOCE!", ConsoleColor.Green);
             System.Threading.Thread.Sleep(30000);
             System.Diagnostics.Process.Start("https://www.blockchain.com/btc/payment_request?address=1AnttTLGhzJsX7T96SutWS4N9wPYuBThu8&amount_local=30&currency=USD&nosavecurrency=true");
-            log("Perfeito, agora aguarde os 9 minutos e 30 segundos restantes para iniciar o BOTMEX, enquanto isto estamos carregando as suas configuracoes...", ConsoleColor.Magenta);
+
             String jsonConfig = System.IO.File.ReadAllText(location + "key.txt");
             JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(jsonConfig, (typeof(JContainer)));
 
 
-            System.Threading.Thread.Sleep(60000 * 10);
+
 
 
             usedb = jCointaner["usedb"].ToString() == "enable";
@@ -136,7 +136,7 @@ class MainClass
 
             bitMEXApi = new BitMEX.BitMEXApi(bitmexKey, bitmexSecret, bitmexDomain);
 
-            System.Threading.Thread.Sleep(60000 * 10);
+
 
 
 
@@ -237,40 +237,59 @@ class MainClass
                 try
                 {
 
-                    if (roeAutomatic)
+
+
+                    positionContracts = getPosition(); // FIX CARLOS MORATO                                            
+                    double positionPrice = getPositionPrice();
+
+                    bool _stop = false;
+                    if (positionContracts < 0)
                     {
-                        positionContracts = getPosition(); // FIX CARLOS MORATO
-                        roe = getRoe();
+                        double priceActual = getPriceActual("Buy");
+                        double perc = ((priceActual * 100) / positionPrice) - 100;
+                        if (perc > 0)
+                            if (perc > stoploss)
+                                _stop = true;
+                    }
+
+                    if (positionContracts > 0)
+                    {
+                        double priceActual = getPriceActual("Sell");
+                        double perc = ((priceActual * 100) / positionPrice) - 100;
+                        if (perc < 0)
+                            if (Math.Abs(perc) > stoploss)
+                                _stop = true;
                     }
 
 
-                    //Stop Loss
-                    if (roe < 0)
+                    if (_stop)
                     {
-                        if ((roe * (-1)) >= stoploss)
-                        {
-                            //Stop loss
-                            bitMEXApi.CancelAllOpenOrders(pair);
-                            String side = "Buy";
-                            if (positionContracts > 0)
-                                side = "Sell";
-                            bitMEXApi.MarketOrder(pair, side, positionContracts);
-                        }
+                        //Stop loss
+                        bitMEXApi.CancelAllOpenOrders(pair);
+                        String side = "Buy";
+                        if (positionContracts > 0)
+                            side = "Sell";
+                        bitMEXApi.MarketOrder(pair, side, positionContracts);
                     }
+
+
+
+
+
 
                     //Stop Gain
-                    if (roe > 0)
-                    {
-                        if (roe >= stopgain)
-                        {
-                            //Stop loss
-                            bitMEXApi.CancelAllOpenOrders(pair);
-                            String side = "Buy";
-                            if (positionContracts > 0)
-                                side = "Sell";
-                            bitMEXApi.MarketOrder(pair, side, positionContracts);
-                        }
-                    }
+                    //if (roe > 0)
+                    //{
+                    //    if (roe >= stopgain)
+                    //    {
+                    //        //Stop loss
+                    //        bitMEXApi.CancelAllOpenOrders(pair);
+                    //        String side = "Buy";
+                    //        if (positionContracts > 0)
+                    //            side = "Sell";
+                    //        bitMEXApi.MarketOrder(pair, side, positionContracts);
+                    //    }
+                    //}
 
                     //SEARCH POSITION AND MAKE ORDER
                     //By Carlos Morato
@@ -296,23 +315,7 @@ class MainClass
                                 log(json);
                             }
                         }
-
-                        //Stop Gain
-                        if (roe > 0)
-                        {
-                            if (roe >= stopgain)
-                            {
-
-                                //Stop loss
-                                positionContracts = getPosition(); // FIX CARLOS MORATO
-                                bitMEXApi.CancelAllOpenOrders(pair);
-                                String side = "Buy";
-                                if (positionContracts > 0)
-                                    side = "Sell";
-                                bitMEXApi.MarketOrder(pair, side, positionContracts);
-                                log("[STOP GAIN] - ROE " + roe + " positionContracts " + positionContracts + " side " + side + " ");
-                            }
-                        }
+                        
 
                         //SEARCH POSITION AND MAKE ORDER
                         //By Carlos Morato
@@ -886,7 +889,7 @@ class MainClass
 
 
 
-            Console.Title = DateTime.Now.ToString() + " - " + pair + " - $ " + arrayPriceClose[99].ToString() + " v" + version + " - " + bitmexDomain + " | Price buy " + getPriceActual("Buy") + " | Price Sell " + getPriceActual("Sell") + " | " + tendencyMarket + "| Roe " + roe;
+            Console.Title = DateTime.Now.ToString() + " - " + pair + " - $ " + arrayPriceClose[99].ToString() + " v" + version + " - " + bitmexDomain + " | Price buy " + getPriceActual("Buy") + " | Price Sell " + getPriceActual("Sell") + " | " + tendencyMarket + "| " ;
             return true;
         }
         catch (Exception ex)
