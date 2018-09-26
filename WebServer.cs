@@ -28,6 +28,7 @@ public class WebServer
                 try { perc = ((double.Parse(ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 1][2].ToString()) * 100) / double.Parse(ds.Tables[0].Rows[0][2].ToString())) - 100; }
                 catch { }
                 sb.AppendLine("<div class='row'><div class='col-sm'>Status: <b>running</b><br/>");
+                sb.AppendLine("Version: <b>" + MainClass.version + "</b><br/>");
                 sb.AppendLine("Site: <b>" + MainClass.bitmexDomain + "</b><br/>");
                 sb.AppendLine("Last update: <b>" + DateTime.Now.ToString() + "</b><br/>");
                 sb.AppendLine("OpenOrders: <b>" + ds.Tables[1].Rows[0]["Value"].ToString() + "</b><br/>");
