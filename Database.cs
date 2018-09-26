@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 public class Database
 {
-    private static JsonParse configJson = new JsonParse();
+    
     //private static string dataBaseFile = MainClass.location + "bd.xml";
     public static void captureDataJob()
     {
@@ -23,7 +23,7 @@ public class Database
             {
 
             }
-            System.Threading.Thread.Sleep(configJson.intervalCapture);
+            System.Threading.Thread.Sleep(MainClass.intervalCapture);
         }
     }
 
@@ -62,7 +62,7 @@ public class Database
                 ds = new System.Data.DataSet();
                 ds.ReadXml(dataBaseFile);
 
-                BitMEX.BitMEXApi bitMEXApi = new BitMEX.BitMEXApi(configJson.bitmexKey, configJson.bitmexSecret, configJson.bitmexDomain);
+                BitMEX.BitMEXApi bitMEXApi = new BitMEX.BitMEXApi(MainClass.bitmexKey, MainClass.bitmexSecret, MainClass.bitmexDomain);
                 string json = bitMEXApi.GetWallet();
                 JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
 
@@ -72,10 +72,10 @@ public class Database
                 if (create)
                     ds.Tables[0].Rows.Clear();
 
-                ds.Tables[0].Rows.Add(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), configJson.pair, jCointaner[0]["walletBalance"].ToString());
+                ds.Tables[0].Rows.Add(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), MainClass.pair, jCointaner[0]["walletBalance"].ToString());
 
                 ds.Tables[1].Rows.Clear();
-                ds.Tables[1].Rows.Add("OpenOrders", bitMEXApi.GetOpenOrders(configJson.pair).Count);
+                ds.Tables[1].Rows.Add("OpenOrders", bitMEXApi.GetOpenOrders(MainClass.pair).Count);
                 ds.Tables[1].Rows.Add("Amount", jCointaner[0]["walletBalance"].ToString());
 
 

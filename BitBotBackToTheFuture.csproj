@@ -68,7 +68,6 @@
     <Compile Include="indicators\IndicatorTrix.cs" />
     <Compile Include="indicators\IndicatorULTOSC.cs" />
     <Compile Include="indicators\IndicatorWILLR.cs" />
-    <Compile Include="JsonParse.cs" />
     <Compile Include="LogClass.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
