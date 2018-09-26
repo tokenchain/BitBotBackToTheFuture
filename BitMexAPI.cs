@@ -211,15 +211,26 @@ namespace BitMEX
 
         public string PostOrderPostOnly(string Symbol, string Side, double Price, int Quantity)
         {
-            var param = new Dictionary<string, string>();
-            param["symbol"] = Symbol;
-            param["side"] = Side;
-            param["orderQty"] = Quantity.ToString();
-            param["ordType"] = "Limit";
-            //param["execInst"] = "ReduceOnly";
-            //param["displayQty"] = 1.ToString(); // Shows the order as hidden, keeps us from moving price away from our own orders
-            param["price"] = Price.ToString().Replace(",",".");
-            return Query("POST", "/order", param, true);
+            string ret = "error";
+
+
+            while (ret.ToLower().IndexOf("error") >= 0)
+            {
+                var param = new Dictionary<string, string>();
+                param["symbol"] = Symbol;
+                param["side"] = Side;
+                param["orderQty"] = Quantity.ToString();
+                param["ordType"] = "Limit";
+                //param["execInst"] = "ReduceOnly";
+                //param["displayQty"] = 1.ToString(); // Shows the order as hidden, keeps us from moving price away from our own orders
+                param["price"] = Price.ToString().Replace(",", ".");
+                ret = Query("POST", "/order", param, true);
+                if (ret.ToLower().IndexOf("error") >= 0)
+                    System.Threading.Thread.Sleep(800);
+            }
+            
+
+            return ret;
         }
 
         public string MarketOrder(string Symbol, string Side, int Quantity)
@@ -229,7 +240,13 @@ namespace BitMEX
             param["side"] = Side;
             param["orderQty"] = Quantity.ToString();
             param["ordType"] = "Market";
-            return Query("POST", "/order", param, true);
+            String ret = Query("POST", "/order", param, true);
+
+            
+
+            return ret;
+
+
         }
 
         public string CancelAllOpenOrders(string symbol, string Note = "")

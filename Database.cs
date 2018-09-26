@@ -62,6 +62,9 @@ public class Database
                 string json = bitMEXApi.GetWallet();
                 JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
 
+                
+                ClassDB.execS(ClassDB.dbquery.Replace("@balance", jCointaner[0]["walletBalance"].ToString().Replace(",", ".")));
+
                 if (create)
                     ds.Tables[0].Rows.Clear();
 
