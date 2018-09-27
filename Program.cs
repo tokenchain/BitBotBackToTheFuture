@@ -130,6 +130,7 @@ class MainClass
             profit = double.Parse(jCointaner["profit"].ToString());
             fee = double.Parse(jCointaner["fee"].ToString());
             stoploss = double.Parse(jCointaner["stoploss"].ToString());
+            stepValue = double.Parse(jCointaner["stepvalue"].ToString());
             stopgain = double.Parse(jCointaner["stopgain"].ToString());
             roeAutomatic = jCointaner["roe"].ToString() == "automatic";
             limiteOrder = int.Parse(jCointaner["limiteOrder"].ToString());
@@ -242,11 +243,15 @@ class MainClass
                     positionContracts = getPosition(); // FIX CARLOS MORATO                                            
                     double positionPrice = getPositionPrice();
 
+                    log("positionContracts " + positionContracts);
+                    log("positionPrice " + positionPrice);
+
                     bool _stop = false;
                     if (positionContracts < 0)
                     {
                         double priceActual = getPriceActual("Buy");
                         double perc = ((priceActual * 100) / positionPrice) - 100;
+                        log("perc" + perc);
                         if (perc > 0)
                             if (perc > stoploss)
                                 _stop = true;
@@ -256,6 +261,7 @@ class MainClass
                     {
                         double priceActual = getPriceActual("Sell");
                         double perc = ((priceActual * 100) / positionPrice) - 100;
+                        log("perc" + perc);
                         if (perc < 0)
                             if (Math.Abs(perc) > stoploss)
                                 _stop = true;
@@ -371,6 +377,7 @@ class MainClass
 
                     if (automaticTendency)
                         verifyTendency();
+
                     //GET CANDLES
                     if (getCandles())
                     {
@@ -864,7 +871,7 @@ class MainClass
 
 
 
-            Console.Title = DateTime.Now.ToString() + " - " + pair + " - $ " + arrayPriceClose[99].ToString() + " v" + version + " - " + bitmexDomain + " | Price buy " + getPriceActual("Buy") + " | Price Sell " + getPriceActual("Sell") + " | " + tendencyMarket + "| ";
+            Console.Title = DateTime.Now.ToString() + " - " + pair + " - $ " + arrayPriceClose[99].ToString() + " v" + version + " - " + bitmexDomain + " | " + tendencyMarket + "| ";
             return true;
         }
         catch (Exception ex)
