@@ -975,7 +975,7 @@ class MainClass
         return null;
     }
 
-    static void log(string value, ConsoleColor color = ConsoleColor.White)
+    public static void log(string value, ConsoleColor color = ConsoleColor.White)
     {
         try
         {

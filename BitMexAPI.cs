@@ -226,7 +226,10 @@ namespace BitMEX
                 param["price"] = Price.ToString().Replace(",", ".");
                 ret = Query("POST", "/order", param, true);
                 if (ret.ToLower().IndexOf("error") >= 0)
-                    System.Threading.Thread.Sleep(800);
+                {
+                    MainClass.log(ret);
+                    System.Threading.Thread.Sleep(1400);
+                }
             }
             
 
