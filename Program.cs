@@ -290,9 +290,9 @@ class MainClass
 
 
                         if(side == "Sell")
-                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") + 10, positionContracts));
-                        if (side == "Buy")
                             log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") - 10, positionContracts));
+                        if (side == "Buy")
+                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") + 10, positionContracts));
                         log("[STOP LOSS] " + pair + " " + side + " " + positionContracts);
                     }
 
@@ -329,9 +329,9 @@ class MainClass
                         if (positionContracts > 0)
                             side = "Sell";
                         if (side == "Sell")
-                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") + 10, positionContracts));
-                        if (side == "Buy")
                             log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") - 10, positionContracts));
+                        if (side == "Buy")
+                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") + 10, positionContracts));
                         log("[STOP GAIN] " + pair + " " + side + " " + positionContracts);
                     }
 
@@ -732,7 +732,7 @@ class MainClass
                 String json = "";
                 if (operation == "surf")
                 {
-                    price = Math.Abs(getPriceActual(side)) + 10;
+                    price = Math.Abs(getPriceActual(side)) - 10;
                     json = bitMEXApi.PostOrderPostOnly(pair, side, price, getPosition() + qtdyContacts);
                 }
                 else
@@ -788,7 +788,7 @@ class MainClass
                 String json = "";
                 if (operation == "surf")
                 {
-                    price = Math.Abs(getPriceActual(side)) - 10;
+                    price = Math.Abs(getPriceActual(side)) + 10;
                     json = bitMEXApi.PostOrderPostOnly(pair, side, price, getPosition() + qtdyContacts);
                 }
                 else
