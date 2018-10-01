@@ -25,7 +25,7 @@ class MainClass
 
 
     //REAL NET
-    public static string version = "0.0.1.11";
+    public static string version = "0.0.2.11";
     public static string location = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "\\";
 
     public static string bitmexKey = "";
@@ -48,9 +48,10 @@ class MainClass
     public static double stoploss = 10;
     public static double stopgain = 15;
     public static string bitmexDomain = "";
+    public static string operation = "normal"; // normal - scalper - surf
     public static bool roeAutomatic = true;
     public static bool usedb = false;
-    public static bool scalper = true;
+    
 
     public static double stepValue = 0.5;
     public static TendencyMarket tendencyMarket = TendencyMarket.NORMAL;
@@ -61,11 +62,14 @@ class MainClass
     public static List<IIndicator> lstIndicatorsEntryCross = new List<IIndicator>();
     public static List<IIndicator> lstIndicatorsEntryDecision = new List<IIndicator>();
 
-    public static double[] arrayPriceClose = new double[100];
-    public static double[] arrayPriceHigh = new double[100];
-    public static double[] arrayPriceLow = new double[100];
-    public static double[] arrayPriceVolume = new double[100];
-    public static double[] arrayPriceOpen = new double[100];
+
+    public static int sizeArrayCandles = 100;
+    public static double[] arrayPriceClose = new double[sizeArrayCandles];
+    public static double[] arrayPriceHigh = new double[sizeArrayCandles];
+    public static double[] arrayPriceLow = new double[sizeArrayCandles];
+    public static double[] arrayPriceVolume = new double[sizeArrayCandles];
+    public static double[] arrayPriceOpen = new double[sizeArrayCandles];
+    public static DateTime[] arrayDate= new DateTime[sizeArrayCandles];
 
 
     public static Object data = new Object();
@@ -110,7 +114,7 @@ class MainClass
 
 
             usedb = jCointaner["usedb"].ToString() == "enable";
-            scalper = jCointaner["scalper"].ToString() == "enable";
+            
             bitmexKey = jCointaner["key"].ToString();
             bitmexSecret = jCointaner["secret"].ToString();
             bitmexKeyWeb = jCointaner["webserverKey"].ToString();
@@ -133,6 +137,7 @@ class MainClass
             stepValue = double.Parse(jCointaner["stepvalue"].ToString());
             stopgain = double.Parse(jCointaner["stopgain"].ToString());
             roeAutomatic = jCointaner["roe"].ToString() == "automatic";
+            operation = jCointaner["operation"].ToString();
             limiteOrder = int.Parse(jCointaner["limiteOrder"].ToString());
 
             bitMEXApi = new BitMEX.BitMEXApi(bitmexKey, bitmexSecret, bitmexDomain);
@@ -147,7 +152,7 @@ class MainClass
 
             //TESTS HERE
 
-            //makeOrder("Buy");
+            tests();
 
             //FINAL
 
@@ -241,10 +246,16 @@ class MainClass
 
 
                     positionContracts = getPosition(); // FIX CARLOS MORATO                                            
-                    double positionPrice = getPositionPrice();
+                    double positionPrice = 0;
+
+                    if(positionContracts != 0)
+                        positionPrice = getPositionPrice();
 
                     log("positionContracts " + positionContracts);
                     log("positionPrice " + positionPrice);
+
+                    
+
 
                     bool _stop = false;
                     if (positionContracts < 0)
@@ -271,31 +282,62 @@ class MainClass
                     if (_stop)
                     {
                         //Stop loss
-                        bitMEXApi.CancelAllOpenOrders(pair);
+                        log(bitMEXApi.CancelAllOpenOrders(pair));
                         String side = "Buy";
                         if (positionContracts > 0)
                             side = "Sell";
-                        bitMEXApi.MarketOrder(pair, side, positionContracts);
+
+
+
+                        if(side == "Sell")
+                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") + 10, positionContracts));
+                        if (side == "Buy")
+                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") - 10, positionContracts));
+                        log("[STOP LOSS] " + pair + " " + side + " " + positionContracts);
                     }
 
 
 
 
+                    bool _stopgain = false;
+                    if (positionContracts < 0)
+                    {
+                        double priceActual = getPriceActual("Buy");
+                        double perc = ((priceActual * 100) / positionPrice) - 100;
+                        log("perc" + perc);
+                        if (perc < 0)
+                            if (Math.Abs(perc) > stopgain)
+                                _stopgain = true;
+                    }
+
+                    if (positionContracts > 0)
+                    {
+                        double priceActual = getPriceActual("Sell");
+                        double perc = ((priceActual * 100) / positionPrice) - 100;
+                        log("perc" + perc);
+                        if (perc > 0)
+                            if (Math.Abs(perc) > stopgain)
+                                _stopgain = true;
+                    }
 
 
-                    //Stop Gain
-                    //if (roe > 0)
-                    //{
-                    //    if (roe >= stopgain)
-                    //    {
-                    //        //Stop loss
-                    //        bitMEXApi.CancelAllOpenOrders(pair);
-                    //        String side = "Buy";
-                    //        if (positionContracts > 0)
-                    //            side = "Sell";
-                    //        bitMEXApi.MarketOrder(pair, side, positionContracts);
-                    //    }
-                    //}
+                    if (_stopgain)
+                    {
+                        //Stop loss
+                        log(bitMEXApi.CancelAllOpenOrders(pair));
+                        String side = "Buy";
+                        if (positionContracts > 0)
+                            side = "Sell";
+                        if (side == "Sell")
+                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") + 10, positionContracts));
+                        if (side == "Buy")
+                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") - 10, positionContracts));
+                        log("[STOP GAIN] " + pair + " " + side + " " + positionContracts);
+                    }
+
+                  
+                  
+                  
 
                     //SEARCH POSITION AND MAKE ORDER
                     //By Carlos Morato
@@ -304,7 +346,9 @@ class MainClass
 
                     //SEARCH POSITION AND MAKE ORDER
                     //By Carlos Morato
-                    if (roeAutomatic && (Math.Abs(getOpenOrderQty()) < Math.Abs(positionContracts)))
+                    #region "Fix position not orders
+
+                    if (operation == "normal" && roeAutomatic && (Math.Abs(getOpenOrderQty()) < Math.Abs(positionContracts)))
                     {
                         log("Get Position " + positionContracts);
 
@@ -367,11 +411,12 @@ class MainClass
 
                     }
 
+                    #endregion
 
                     //CANCEL ORDER WITHOUT POSITION
                     //By Carlos Morato
 
-                    if (roeAutomatic && Math.Abs(positionContracts) != Math.Abs(getOpenOrderQty()))
+                    if (operation != "surf" && roeAutomatic && Math.Abs(positionContracts) != Math.Abs(getOpenOrderQty()))
                         bitMEXApi.CancelAllOpenOrders(pair);
 
 
@@ -682,8 +727,21 @@ class MainClass
 
             if (side == "Sell" && statusShort == "enable" && Math.Abs(limiteOrder) > Math.Abs(bitMEXApi.GetOpenOrders(pair).Count))
             {
-                double price = Math.Abs(getPriceActual(side)) + stepValue;
-                String json = bitMEXApi.PostOrderPostOnly(pair, side, price, qtdyContacts);
+                double price = 0;
+
+                String json = "";
+                if (operation == "surf")
+                {
+                    price = Math.Abs(getPriceActual(side)) + 10;
+                    json = bitMEXApi.PostOrderPostOnly(pair, side, price, getPosition() + qtdyContacts);
+                }
+                else
+                {
+                    price = Math.Abs(getPriceActual(side)) + stepValue ;
+                    json = bitMEXApi.PostOrderPostOnly(pair, side, price,qtdyContacts);
+                }
+
+                
                 JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
                 log(json);
 
@@ -691,7 +749,7 @@ class MainClass
                 {
                     if (!existsOrderOpenById(jCointaner["orderID"].ToString()))
                     {
-                        if (scalper)
+                        if (operation=="scalper")
                         {
                             price = price - stepValue;
                         }
@@ -700,7 +758,9 @@ class MainClass
                             price -= (price * profit) / 100;
                             price = Math.Abs(Math.Floor(price));
                         }
-                        json = bitMEXApi.PostOrderPostOnly(pair, "Buy", price, qtdyContacts);
+
+                        if(operation!= "surf")
+                            json = bitMEXApi.PostOrderPostOnly(pair, "Buy", price, qtdyContacts);
 
                         log(json);
                         execute = true;
@@ -724,8 +784,18 @@ class MainClass
 
             if (side == "Buy" && statusLong == "enable" && Math.Abs(limiteOrder) > Math.Abs(bitMEXApi.GetOpenOrders(pair).Count))
             {
-                double price = Math.Abs(getPriceActual(side)) - stepValue;
-                String json = bitMEXApi.PostOrderPostOnly(pair, side, price, qtdyContacts);
+                double price = 0;
+                String json = "";
+                if (operation == "surf")
+                {
+                    price = Math.Abs(getPriceActual(side)) - 10;
+                    json = bitMEXApi.PostOrderPostOnly(pair, side, price, getPosition() + qtdyContacts);
+                }
+                else
+                {
+                    price = Math.Abs(getPriceActual(side)) - stepValue;
+                    json = bitMEXApi.MarketOrder(pair, side, qtdyContacts);
+                }
 
                 JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
                 log(json);
@@ -735,7 +805,7 @@ class MainClass
                     if (!existsOrderOpenById(jCointaner["orderID"].ToString()))
                     {
 
-                        if (scalper)
+                        if (operation == "scalper")
                         {
                             price = price + stepValue;
                         }
@@ -744,7 +814,9 @@ class MainClass
                             price += (price * profit) / 100;
                             price = Math.Abs(Math.Floor(price));
                         }
-                        json = bitMEXApi.PostOrderPostOnly(pair, "Sell", price, qtdyContacts);
+
+                        if (operation != "surf")
+                            json = bitMEXApi.PostOrderPostOnly(pair, "Sell", price, qtdyContacts);
 
                         log(json);
                         execute = true;
@@ -846,11 +918,12 @@ class MainClass
     {
         try
         {
-            arrayPriceClose = new double[100];
-            arrayPriceHigh = new double[100];
-            arrayPriceLow = new double[100];
-            arrayPriceVolume = new double[100];
-            arrayPriceOpen = new double[100];
+            arrayPriceClose = new double[sizeArrayCandles];
+            arrayPriceHigh = new double[sizeArrayCandles];
+            arrayPriceLow = new double[sizeArrayCandles];
+            arrayPriceVolume = new double[sizeArrayCandles];
+            arrayPriceOpen = new double[sizeArrayCandles];
+            arrayDate = new DateTime[sizeArrayCandles];
             List<BitMEX.Candle> lstCandle = bitMEXApi.GetCandleHistory(pair, 100, timeGraph);
             int i = 0;
             foreach (var candle in lstCandle)
@@ -860,6 +933,7 @@ class MainClass
                 arrayPriceLow[i] = (double)candle.Low;
                 arrayPriceVolume[i] = (double)candle.Volume;
                 arrayPriceOpen[i] = (double)candle.Open;
+                arrayDate[i] = (DateTime)candle.TimeStamp;
                 i++;
             }
             Array.Reverse(arrayPriceClose);
@@ -867,11 +941,12 @@ class MainClass
             Array.Reverse(arrayPriceLow);
             Array.Reverse(arrayPriceVolume);
             Array.Reverse(arrayPriceOpen);
+            Array.Reverse(arrayDate);
 
 
 
 
-            Console.Title = DateTime.Now.ToString() + " - " + pair + " - $ " + arrayPriceClose[99].ToString() + " v" + version + " - " + bitmexDomain + " | " + tendencyMarket + "| ";
+            Console.Title = DateTime.Now.ToString() + " - " + pair + " - $ " + arrayPriceClose[99].ToString() + " v" + version + " - " + bitmexDomain + " | " + tendencyMarket + "| operation " + operation;
             return true;
         }
         catch (Exception ex)
@@ -994,6 +1069,33 @@ class MainClass
         catch { }
     }
 
+
+    public static void tests()
+    {
+        getCandles();
+
+        IndicatorSAR sar = new IndicatorSAR();
+        Operation o = sar.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
+
+
+        for (int i = 0; i < 99; i++)
+        {
+            try
+            {
+                if (sar.arrayresultTA[i] < arrayPriceClose[i] && sar.arrayresultTA[i - 1] > arrayPriceClose[i-1])
+                    log(arrayDate[i].ToString() + " - BUY");
+                else if (sar.arrayresultTA[i] > arrayPriceClose[i] && sar.arrayresultTA[i - 1] < arrayPriceClose[i-1])
+                    log(arrayDate[i].ToString() + " - SELL");
+                else
+                    log(arrayDate[i].ToString() + " - NOTHING");
+            }
+            catch { }
+        }
+
+    
+
+        return;
+    }
 
 
 }
