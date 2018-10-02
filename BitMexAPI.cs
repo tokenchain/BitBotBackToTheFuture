@@ -280,7 +280,7 @@ namespace BitMEX
             param["symbol"] = symbol;
             param["count"] = count.ToString();
             param["reverse"] = true.ToString();
-            param["partial"] = false.ToString();
+            param["partial"] = "false";
             param["binSize"] = size;
             string res = Query("GET", "/trade/bucketed", param);
             return JsonConvert.DeserializeObject<List<Candle>>(res).OrderByDescending(a => a.TimeStamp).ToList();
@@ -361,15 +361,11 @@ namespace BitMEX
     public class Candle
     {
         public DateTime TimeStamp { get; set; }
-        public double? Open { get; set; }
-        public double? Close { get; set; }
-        public double? High { get; set; }
-        public double? Low { get; set; }
-        public double? Volume { get; set; }
-        public int Trades { get; set; }
-        public int PCC { get; set; }
-        public double? MA1 { get; set; }
-        public double? MA2 { get; set; }
+        public double? open { get; set; }
+        public double? close { get; set; }
+        public double? high { get; set; }
+        public double? low { get; set; }
+        public double? volume { get; set; }        
     }
 
     public class Position

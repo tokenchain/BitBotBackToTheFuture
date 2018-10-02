@@ -442,6 +442,7 @@ class MainClass
                                 log("Indicator: " + item.getName());
                                 log("Result1: " + item.getResult());
                                 log("Result2: " + item.getResult2());
+                                log("Date: " + arrayDate[arrayPriceOpen.Length-1]);
                                 log("Operation: " + operationBuy.ToString());
                                 log("");
                                 if (operationBuy != Operation.buy)
@@ -924,26 +925,25 @@ class MainClass
             arrayPriceVolume = new double[sizeArrayCandles];
             arrayPriceOpen = new double[sizeArrayCandles];
             arrayDate = new DateTime[sizeArrayCandles];
-            List<BitMEX.Candle> lstCandle = bitMEXApi.GetCandleHistory(pair, 100, timeGraph);
+            List<BitMEX.Candle> lstCandle = bitMEXApi.GetCandleHistory(pair, sizeArrayCandles, timeGraph);
             int i = 0;
             foreach (var candle in lstCandle)
             {
-                arrayPriceClose[i] = (double)candle.Close;
-                arrayPriceHigh[i] = (double)candle.High;
-                arrayPriceLow[i] = (double)candle.Low;
-                arrayPriceVolume[i] = (double)candle.Volume;
-                arrayPriceOpen[i] = (double)candle.Open;
+                arrayPriceClose[i] = (double)candle.close;
+                arrayPriceHigh[i] = (double)candle.high;
+                arrayPriceLow[i] = (double)candle.low;
+                arrayPriceVolume[i] = (double)candle.volume;
+                arrayPriceOpen[i] = (double)candle.open;
                 arrayDate[i] = (DateTime)candle.TimeStamp;
                 i++;
             }
+
             Array.Reverse(arrayPriceClose);
             Array.Reverse(arrayPriceHigh);
             Array.Reverse(arrayPriceLow);
             Array.Reverse(arrayPriceVolume);
             Array.Reverse(arrayPriceOpen);
             Array.Reverse(arrayDate);
-
-
 
 
             Console.Title = DateTime.Now.ToString() + " - " + pair + " - $ " + arrayPriceClose[99].ToString() + " v" + version + " - " + bitmexDomain + " | " + tendencyMarket + "| operation " + operation;
@@ -1078,16 +1078,22 @@ class MainClass
         Operation o = sar.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
 
 
-        for (int i = 0; i < 99; i++)
+        for (int i = 0; i < sizeArrayCandles-1; i++)
         {
             try
             {
-                if (sar.arrayresultTA[i] < arrayPriceClose[i] && sar.arrayresultTA[i - 1] > arrayPriceClose[i-1])
-                    log(arrayDate[i].ToString() + " - BUY");
-                else if (sar.arrayresultTA[i] > arrayPriceClose[i] && sar.arrayresultTA[i - 1] < arrayPriceClose[i-1])
-                    log(arrayDate[i].ToString() + " - SELL");
-                else
-                    log(arrayDate[i].ToString() + " - NOTHING");
+                //if (sar.arrayresultTA[i] < arrayPriceClose[i] && sar.arrayresultTA[i - 1] < arrayPriceClose[i-1] && sar.arrayresultTA[i - 2] > arrayPriceClose[i - 2])
+                //    log(arrayDate[i].ToString() + " - BUY");
+                //else if (sar.arrayresultTA[i] > arrayPriceClose[i] && sar.arrayresultTA[i - 1] > arrayPriceClose[i-1] && sar.arrayresultTA[i - 2] < arrayPriceClose[i - 2])
+                //    log(arrayDate[i].ToString() + " - SELL");
+                //else
+                //    log(arrayDate[i].ToString() + " - NOTHING");
+
+                if (sar.arrayresultTA[i] < arrayPriceClose[i] )
+                    log(arrayDate[i].ToString() + " - BUY - SAR " + sar.arrayresultTA[i] + " CLOSE " + arrayPriceClose[i]);
+                else if (sar.arrayresultTA[i] > arrayPriceClose[i] )
+                    log(arrayDate[i].ToString() + " - SELL - SAR " + sar.arrayresultTA[i] + " CLOSE " + arrayPriceClose[i]);
+
             }
             catch { }
         }
