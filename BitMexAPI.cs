@@ -93,10 +93,10 @@ namespace BitMEX
             }
         }
 
-        static object objLockQuery= new object();
+        static object objLockQuery = new object();
         private string Query(string method, string function, Dictionary<string, string> param = null, bool auth = false, bool json = false)
         {
-         //   lock (objLockQuery)
+            //   lock (objLockQuery)
             {
                 string paramData = json ? BuildJSON(param) : BuildQueryData(param);
                 string url = "/api/v1" + function + ((method == "GET" && paramData != "") ? "?" + paramData : "");
@@ -209,29 +209,18 @@ namespace BitMEX
             return JsonConvert.DeserializeObject<List<OrderBook>>(res);
         }
 
-        public string PostOrderPostOnly(string Symbol, string Side, double Price, int Quantity)
+        public string PostOrderPostOnly(string Symbol, string Side, double Price, int Quantity, bool force = false)
         {
-            string ret = "error";
-
-
-            while (ret.ToLower().IndexOf("error") >= 0)
-            {
-                var param = new Dictionary<string, string>();
-                param["symbol"] = Symbol;
-                param["side"] = Side;
-                param["orderQty"] = Quantity.ToString();
-                param["ordType"] = "Limit";
-                //param["execInst"] = "ReduceOnly";
-                //param["displayQty"] = 1.ToString(); // Shows the order as hidden, keeps us from moving price away from our own orders
-                param["price"] = Price.ToString().Replace(",", ".");
-                ret = Query("POST", "/order", param, true);
-                if (ret.ToLower().IndexOf("error") >= 0)
-                {
-                    MainClass.log(ret);
-                    System.Threading.Thread.Sleep(1400);
-                }
-            }
-            
+            var param = new Dictionary<string, string>();
+            param["symbol"] = Symbol;
+            param["side"] = Side;
+            param["orderQty"] = Quantity.ToString();
+            param["ordType"] = "Limit";
+            if(!force)
+                param["execInst"] = "ParticipateDoNotInitiate";
+            //param["displayQty"] = 1.ToString(); // Shows the order as hidden, keeps us from moving price away from our own orders
+            param["price"] = Price.ToString().Replace(",", ".");
+            string ret = Query("POST", "/order", param, true);
 
             return ret;
         }
@@ -245,7 +234,7 @@ namespace BitMEX
             param["ordType"] = "Market";
             String ret = Query("POST", "/order", param, true);
 
-            
+
 
             return ret;
 
@@ -280,7 +269,7 @@ namespace BitMEX
             param["symbol"] = symbol;
             param["count"] = count.ToString();
             param["reverse"] = true.ToString();
-            param["partial"] = "false";
+            param["partial"] = "true";
             param["binSize"] = size;
             string res = Query("GET", "/trade/bucketed", param);
             return JsonConvert.DeserializeObject<List<Candle>>(res).OrderByDescending(a => a.TimeStamp).ToList();
@@ -316,7 +305,7 @@ namespace BitMEX
             param["currency"] = "XBt";
             return Query("GET", "/user/walletHistory", param, true);
         }
-        
+
 
 
         #endregion
@@ -365,7 +354,7 @@ namespace BitMEX
         public double? close { get; set; }
         public double? high { get; set; }
         public double? low { get; set; }
-        public double? volume { get; set; }        
+        public double? volume { get; set; }
     }
 
     public class Position
@@ -388,12 +377,12 @@ namespace BitMEX
 
         public double percentual()
         {
-            if (UnrealisedPnl < 0)            
+            if (UnrealisedPnl < 0)
                 return (((((double)UnrealisedPnl * (-1)) * 100) / (double)LastValue) * (double)Leverage) * (-1);
-            else                
-                return ((((double)UnrealisedPnl) * 100) / (double)LastValue) * (double)Leverage;            
+            else
+                return ((((double)UnrealisedPnl) * 100) / (double)LastValue) * (double)Leverage;
         }
-                
+
     }
 
     public class Order

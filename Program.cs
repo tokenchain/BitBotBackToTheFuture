@@ -290,9 +290,9 @@ class MainClass
 
 
                         if(side == "Sell")
-                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") - 10, Math.Abs( positionContracts)));
+                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") - 10, Math.Abs( positionContracts),true));
                         if (side == "Buy")
-                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") + 10, Math.Abs(positionContracts)));
+                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") + 10, Math.Abs(positionContracts),true));
                         log("[STOP LOSS] " + pair + " " + side + " " + positionContracts);
                     }
 
@@ -329,9 +329,9 @@ class MainClass
                         if (positionContracts > 0)
                             side = "Sell";
                         if (side == "Sell")
-                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") - 10, Math.Abs(positionContracts)));
+                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") - 10, Math.Abs(positionContracts),true));
                         if (side == "Buy")
-                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") + 10, Math.Abs(positionContracts)));
+                            log(bitMEXApi.PostOrderPostOnly(pair, side, getPriceActual("Sell") + 10, Math.Abs(positionContracts),true));
                         log("[STOP GAIN] " + pair + " " + side + " " + positionContracts);
                     }
 
@@ -723,8 +723,10 @@ class MainClass
         bool execute = false;
         try
         {
-            log("Make order " + side);
 
+            
+            log(" wait 5s Make order " + side);
+            
 
             if (side == "Sell" && statusShort == "enable" && Math.Abs(limiteOrder) > Math.Abs(bitMEXApi.GetOpenOrders(pair).Count))
             {
@@ -734,18 +736,21 @@ class MainClass
                 if (operation == "surf")
                 {
                     price = Math.Abs(getPriceActual(side)) - 10;
-                    json = bitMEXApi.PostOrderPostOnly(pair, side, price, Math.Abs(getPosition()) + Math.Abs(qtdyContacts));
+                    json = bitMEXApi.PostOrderPostOnly(pair, side, price, Math.Abs(getPosition()) + Math.Abs(qtdyContacts),true);
                 }
                 else
                 {
-                    price = Math.Abs(getPriceActual(side)) + stepValue ;
+                    price = Math.Abs(getPriceActual(side)) + 0 ;
                     json = bitMEXApi.PostOrderPostOnly(pair, side, price, Math.Abs(qtdyContacts));
                 }
 
-                
-                JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
                 log(json);
 
+                if (json.ToLower().IndexOf("error") >= 0)
+                    return;
+                
+                JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
+                
                 for (int i = 0; i < intervalCancelOrder; i++)
                 {
                     if (!existsOrderOpenById(jCointaner["orderID"].ToString()))
@@ -761,7 +766,21 @@ class MainClass
                         }
 
                         if(operation!= "surf")
-                            json = bitMEXApi.PostOrderPostOnly(pair, "Buy", price, Math.Abs(qtdyContacts));
+                        {
+
+                            json = "error";
+                            while (json.ToLower().IndexOf("error") >= 0)
+                            {
+                                json = bitMEXApi.PostOrderPostOnly(pair, "Buy", price, Math.Abs(qtdyContacts));
+                                if (json.ToLower().IndexOf("error") >= 0)
+                                    Thread.Sleep(800);
+                            }
+
+                        }
+                            
+
+
+
 
                         log(json);
                         execute = true;
@@ -790,16 +809,21 @@ class MainClass
                 if (operation == "surf")
                 {
                     price = Math.Abs(getPriceActual(side)) + 10;
-                    json = bitMEXApi.PostOrderPostOnly(pair, side, price, Math.Abs(getPosition()) + Math.Abs(qtdyContacts));
+                    json = bitMEXApi.PostOrderPostOnly(pair, side, price, Math.Abs(getPosition()) + Math.Abs(qtdyContacts),true);
                 }
                 else
                 {
-                    price = Math.Abs(getPriceActual(side)) - stepValue;
+                    price = Math.Abs(getPriceActual(side)) - 0;
                     json = bitMEXApi.PostOrderPostOnly(pair, side, price, Math.Abs(qtdyContacts));
                 }
 
-                JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
                 log(json);
+                if (json.ToLower().IndexOf("error") >= 0)
+                    return;
+
+
+                JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
+                
                 log("wait total...");
                 for (int i = 0; i < intervalCancelOrder; i++)
                 {
@@ -817,7 +841,15 @@ class MainClass
                         }
 
                         if (operation != "surf")
-                            json = bitMEXApi.PostOrderPostOnly(pair, "Sell", price, Math.Abs(qtdyContacts));
+                        {
+                            json = "error";
+                            while (json.ToLower().IndexOf("error") >= 0)
+                            {
+                                json = bitMEXApi.PostOrderPostOnly(pair, "Sell", price, Math.Abs(qtdyContacts));
+                                if(json.ToLower().IndexOf("error") >= 0)
+                                    Thread.Sleep(800);
+                            }
+                        }
 
                         log(json);
                         execute = true;
@@ -1072,32 +1104,8 @@ class MainClass
 
     public static void tests()
     {
-        getCandles();
 
-        IndicatorSAR sar = new IndicatorSAR();
-        Operation o = sar.GetOperation(arrayPriceOpen, arrayPriceClose, arrayPriceLow, arrayPriceHigh, arrayPriceVolume);
-
-
-        for (int i = 0; i < sizeArrayCandles-1; i++)
-        {
-            try
-            {
-                //if (sar.arrayresultTA[i] < arrayPriceClose[i] && sar.arrayresultTA[i - 1] < arrayPriceClose[i-1] && sar.arrayresultTA[i - 2] > arrayPriceClose[i - 2])
-                //    log(arrayDate[i].ToString() + " - BUY");
-                //else if (sar.arrayresultTA[i] > arrayPriceClose[i] && sar.arrayresultTA[i - 1] > arrayPriceClose[i-1] && sar.arrayresultTA[i - 2] < arrayPriceClose[i - 2])
-                //    log(arrayDate[i].ToString() + " - SELL");
-                //else
-                //    log(arrayDate[i].ToString() + " - NOTHING");
-
-                if (sar.arrayresultTA[i] < arrayPriceClose[i] )
-                    log(arrayDate[i].ToString() + " - BUY - SAR " + sar.arrayresultTA[i] + " CLOSE " + arrayPriceClose[i]);
-                else if (sar.arrayresultTA[i] > arrayPriceClose[i] )
-                    log(arrayDate[i].ToString() + " - SELL - SAR " + sar.arrayresultTA[i] + " CLOSE " + arrayPriceClose[i]);
-
-            }
-            catch { }
-        }
-
+       
     
 
         return;
