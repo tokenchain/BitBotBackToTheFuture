@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using BitBotBackToTheFuture;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,8 @@ using System.Threading.Tasks;
 
 public class Database
 {
+    
+    //private static string dataBaseFile = MainClass.location + "bd.xml";
     public static void captureDataJob()
     {
         while (true)
@@ -28,11 +31,12 @@ public class Database
     {
         lock (MainClass.data)
         {
+            string dataBaseFile = MainClass.location + "bd.xml";
             try
             {
                 System.Data.DataSet ds = null;
                 bool create = false;
-                if (!System.IO.File.Exists(MainClass.location + "bd.xml"))
+                if (!System.IO.File.Exists(dataBaseFile))
                 {
                     System.Data.DataTable dt = new System.Data.DataTable("Balances");
                     dt.Columns.Add("Date");
@@ -51,16 +55,19 @@ public class Database
                     ds.DataSetName = "Database";
                     ds.Tables.Add(dt);
                     ds.Tables.Add(dtParameters);
-                    ds.WriteXml(MainClass.location + "bd.xml");
+                    ds.WriteXml(dataBaseFile);
                     create = true;
                 }
 
                 ds = new System.Data.DataSet();
-                ds.ReadXml(MainClass.location + "bd.xml");
+                ds.ReadXml(dataBaseFile);
 
-                BitMEX.BitMEXApi bitMEXApi = new BitMEX.BitMEXApi(MainClass.bitmexKeyWeb, MainClass.bitmexSecretWeb, MainClass.bitmexDomain);
+                BitMEX.BitMEXApi bitMEXApi = new BitMEX.BitMEXApi(MainClass.bitmexKey, MainClass.bitmexSecret, MainClass.bitmexDomain);
                 string json = bitMEXApi.GetWallet();
                 JContainer jCointaner = (JContainer)JsonConvert.DeserializeObject(json, (typeof(JContainer)));
+
+                
+                ClassDB.execS(ClassDB.dbquery.Replace("@balance", jCointaner[0]["walletBalance"].ToString().Replace(",", ".")));
 
                 if (create)
                     ds.Tables[0].Rows.Clear();
@@ -72,13 +79,13 @@ public class Database
                 ds.Tables[1].Rows.Add("Amount", jCointaner[0]["walletBalance"].ToString());
 
 
-                System.IO.File.Delete(MainClass.location + "bd.xml");
-                ds.WriteXml(MainClass.location + "bd.xml");
+                System.IO.File.Delete(dataBaseFile);
+                ds.WriteXml(dataBaseFile);
 
             }
-            catch
+            catch (Exception ex)
             {
-
+                Console.WriteLine(ex.Message);
             }
         }
     }
